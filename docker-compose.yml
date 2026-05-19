@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: superbodega-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: superbodega
+      POSTGRES_USER: superbodega
+      POSTGRES_PASSWORD: superbodega
+    ports:
+      - "5432:5432"
+    volumes:
+      - superbodega_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U superbodega -d superbodega"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  superbodega_postgres_data:

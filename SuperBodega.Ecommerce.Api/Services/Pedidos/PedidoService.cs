@@ -6,9 +6,7 @@ using SuperBodega.Infrastructure.Data;
 
 namespace SuperBodega.Ecommerce.Api.Services.Pedidos;
 
-public sealed class PedidoService(
-    SuperBodegaDbContext dbContext,
-    KafkaProducer kafkaProducer) : IPedidoService
+public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer kafkaProducer) : IPedidoService
 {
     public Task<ServiceResult<PedidoResponse>> CrearSincronoAsync(
         CrearPedidoRequest request,
@@ -25,7 +23,6 @@ public sealed class PedidoService(
     {
         var solicitudId = Guid.NewGuid();
 
-        // PRODUCER
         await kafkaProducer.EnviarPedidoAsync(request.CarritoId);
 
         return new PedidoEncoladoResponse(
@@ -34,7 +31,6 @@ public sealed class PedidoService(
             "Encolado");
     }
 
-    // CONSUMER llama este método
     public async Task<ServiceResult<PedidoResponse>> ProcesarCarritoAsync(
         Guid carritoId,
         CancellationToken cancellationToken)
@@ -56,10 +52,22 @@ public sealed class PedidoService(
                 .Fail("El carrito no existe.");
         }
 
-        if (carrito.Estado != EstadoCarrito.Abierto)
+        if (carrito.Estado == EstadoCarrito.Cerrado)
         {
+            var ventaExistente = await dbContext.Ventas
+                .Include(v => v.NotificacionesPedido)
+                .FirstOrDefaultAsync(v => v.CarritoId == carritoId, cancellationToken);
+
+            if (ventaExistente != null)
+            {
+                var notif = ventaExistente.NotificacionesPedido.First();
+
+                return ServiceResult<PedidoResponse>
+                    .Ok(ToResponse(ventaExistente, carrito, notif));
+            }
+
             return ServiceResult<PedidoResponse>
-                .Fail("El carrito no esta abierto.");
+                .Fail("Carrito cerrado sin venta.");
         }
 
         if (!carrito.Detalles.Any())
@@ -101,13 +109,20 @@ public sealed class PedidoService(
         venta.NotificacionesPedido.Add(notificacion);
 
         carrito.Estado = EstadoCarrito.Cerrado;
+
         carrito.ActualizadoUtc = DateTime.UtcNow;
 
         dbContext.Ventas.Add(venta);
 
+        Console.WriteLine("Guardando en base de datos...");
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
+        Console.WriteLine(" Guardado en DB");
+
         await transaction.CommitAsync(cancellationToken);
+
+        Console.WriteLine("Transacción completada");
 
         return ServiceResult<PedidoResponse>
             .Ok(ToResponse(venta, carrito, notificacion));

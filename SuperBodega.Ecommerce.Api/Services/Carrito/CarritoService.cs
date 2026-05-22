@@ -79,7 +79,6 @@ public sealed class CarritoService(SuperBodegaDbContext dbContext) : ICarritoSer
             existingItem.PrecioUnitario = producto.PrecioVenta;
         }
 
-        carrito.Estado = EstadoCarrito.Cerrado;
         carrito.ActualizadoUtc = DateTime.UtcNow;
 
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -18,7 +18,7 @@ public class KafkaConsumerService : BackgroundService
         {
             BootstrapServers = "localhost:9092",
             GroupId = "pedidos-group",
-            AutoOffsetReset = AutoOffsetReset.Latest
+            AutoOffsetReset = AutoOffsetReset.Earliest
         };
 
         _consumer = new ConsumerBuilder<Ignore, string>(config)

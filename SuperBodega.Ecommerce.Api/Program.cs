@@ -1,9 +1,12 @@
-using SuperBodega.Infrastructure;
+
+using SuperBodega.Ecommerce.Api.Consumers;
+using SuperBodega.Ecommerce.Api.Messaging;
 using SuperBodega.Ecommerce.Api.Queues;
 using SuperBodega.Ecommerce.Api.Services.Carrito;
 using SuperBodega.Ecommerce.Api.Services.Catalogo;
 using SuperBodega.Ecommerce.Api.Services.Pedidos;
 using SuperBodega.Ecommerce.Api.Workers;
+using SuperBodega.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,8 +19,8 @@ builder.Services.AddSuperBodegaInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<ICarritoService, CarritoService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
-builder.Services.AddSingleton<IPedidoQueue, InMemoryPedidoQueue>();
-builder.Services.AddHostedService<PedidoQueueWorker>();
+builder.Services.AddSingleton<KafkaProducer>();
+builder.Services.AddHostedService<KafkaConsumerService>();
 
 var app = builder.Build();
 

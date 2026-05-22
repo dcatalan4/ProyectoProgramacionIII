@@ -55,26 +55,33 @@ public sealed class CarritoService(SuperBodegaDbContext dbContext) : ICarritoSer
         var existingItem = carrito.Detalles.FirstOrDefault(item => item.ProductoId == request.ProductoId);
         if (existingItem is null)
         {
-            carrito.Detalles.Add(new CarritoDetalle
+            var detalle = new CarritoDetalle
             {
+                CarritoId = carrito.Id,
                 ProductoId = producto.Id,
                 Cantidad = request.Cantidad,
                 PrecioUnitario = producto.PrecioVenta
-            });
+            };
+
+            dbContext.CarritoDetalles.Add(detalle);
         }
         else
         {
             var nuevaCantidad = existingItem.Cantidad + request.Cantidad;
+
             if (nuevaCantidad > producto.Stock)
             {
-                return ServiceResult<CarritoResponse>.Fail($"Stock insuficiente para {producto.Nombre}.");
+                return ServiceResult<CarritoResponse>.Fail(
+                    $"Stock insuficiente para {producto.Nombre}.");
             }
 
             existingItem.Cantidad = nuevaCantidad;
             existingItem.PrecioUnitario = producto.PrecioVenta;
         }
 
+        carrito.Estado = EstadoCarrito.Cerrado;
         carrito.ActualizadoUtc = DateTime.UtcNow;
+
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<CarritoResponse>.Ok((await GetResponseAsync(carrito.Id, cancellationToken))!);

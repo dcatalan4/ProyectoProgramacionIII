@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using SuperBodega.Domain.Entities;
 using SuperBodega.Ecommerce.Api.Dtos.Pedidos;
+using SuperBodega.Ecommerce.Api.Messaging;
 using SuperBodega.Ecommerce.Api.Queues;
 using SuperBodega.Ecommerce.Api.Services.Pedidos;
 using SuperBodega.Infrastructure.Data;
@@ -15,7 +16,7 @@ public sealed class PedidoSincronoServiceTests
     {
         using var dbContext = CreateDbContext();
         var seed = await SeedCartAsync(dbContext, stock: 10, quantity: 3);
-        var service = new PedidoService(dbContext, new NoopPedidoQueue());
+        var service = new PedidoService(dbContext, new KafkaProducer());
 
         var result = await service.CrearSincronoAsync(new CrearPedidoRequest
         {
@@ -31,7 +32,7 @@ public sealed class PedidoSincronoServiceTests
 
         Assert.True(result.Success);
         Assert.Equal(7, producto?.Stock);
-        Assert.Equal(EstadoCarrito.ConvertidoEnVenta, carrito?.Estado);
+        Assert.Equal(EstadoCarrito.Cerrado, carrito?.Estado);
         Assert.Single(venta.Detalles);
         Assert.Single(venta.NotificacionesPedido);
         Assert.True(venta.NotificacionesPedido.Single().FueEnviada);
@@ -89,18 +90,5 @@ public sealed class PedidoSincronoServiceTests
         await dbContext.SaveChangesAsync();
 
         return (carrito.Id, producto.Id, cliente.Email);
-    }
-
-    private sealed class NoopPedidoQueue : IPedidoQueue
-    {
-        public ValueTask EnqueueAsync(PedidoQueueItem item, CancellationToken cancellationToken)
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask<PedidoQueueItem> DequeueAsync(CancellationToken cancellationToken)
-        {
-            throw new NotSupportedException();
-        }
     }
 }

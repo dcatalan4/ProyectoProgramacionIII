@@ -145,6 +145,12 @@ Topic utilizado:
 pedidos-topic
 ```
 
+Crear el topic a utilizar:
+
+```bash
+docker exec -it superbodega-kafka kafka-topics --create --topic pedidos-topic --bootstrap-server localhost:9092 --partitions 1 --replication-factor 1
+```
+
 Consumer Group:
 
 ```text

@@ -1,0 +1,340 @@
+{
+  "info": {
+    "_postman_id": "ac7fa07e-65ce-4b89-ab81-34622ae4c11a",
+    "name": "Simulacion de usuario",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "54903872",
+    "_collection_link": "https://go.postman.co/collection/54903872-ac7fa07e-65ce-4b89-ab81-34622ae4c11a?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Crear Cliente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");\r",
+              "\r",
+              "const response = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"clienteId\", response.id);\r",
+              "\r",
+              "console.log(\"Cliente ID guardado: \" + response.id);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "const random = Math.floor(Math.random() * 10000);\r",
+              "\r",
+              "const email = `test${random}@example.com`;\r",
+              "\r",
+              "pm.collectionVariables.set(\"emailGenerado\", email);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"nombre\": \"Prueba\",\r\n  \"apellido\": \"Temporal\",\r\n  \"email\": \"{{emailGenerado}}\",\r\n  \"telefono\": \"11111111\",\r\n  \"direccionEnvio\": \"house\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5088/api/clientes",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5088",
+          "path": [
+            "api",
+            "clientes"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ver catalogo",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5180/api/catalogo?page=1&pageSize=10",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5180",
+          "path": [
+            "api",
+            "catalogo"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "1"
+            },
+            {
+              "key": "pageSize",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Obtener Carrito",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");\r",
+              "\r",
+              "const response = pm.response.json();\r",
+              "\r",
+              "pm.environment.set(\"id\", response.id);\r",
+              "\r",
+              "console.log(\"ID de carrito guardado: \" + response.id);"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"clienteId\": \"{{clienteId}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5180/api/carrito",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5180",
+          "path": [
+            "api",
+            "carrito"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Ver items del carrito",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"carritoId\": \"{{id}}\",\r\n  \"productoId\": \"55555555-5555-5555-5555-555555555555\",\r\n  \"cantidad\": 20\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5180/api/carrito/items",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5180",
+          "path": [
+            "api",
+            "carrito",
+            "items"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Pedidos Sync",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"Status 200\", function () {\r",
+              "    pm.response.to.have.status(200);\r",
+              "});\r",
+              "\r",
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"carritoId\": \"{{id}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5180/api/pedidos/sincrono",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5180",
+          "path": [
+            "api",
+            "pedidos",
+            "sincrono"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Pedidos Async",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");"
+            ],
+            "type": "text/javascript",
+            "packages": {},
+            "requests": {}
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\r\n  \"carritoId\": \"{{id}}\"\r\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "http://localhost:5180/api/pedidos/asincrono",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "5180",
+          "path": [
+            "api",
+            "pedidos",
+            "asincrono"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "emailGenerado",
+      "value": ""
+    }
+  ]
+}

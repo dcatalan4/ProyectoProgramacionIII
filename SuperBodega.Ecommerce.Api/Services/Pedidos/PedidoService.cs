@@ -52,22 +52,15 @@ public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer k
                 .Fail("El carrito no existe.");
         }
 
-        if (carrito.Estado == EstadoCarrito.Cerrado)
+        var ventaExistente = await dbContext.Ventas
+            .AnyAsync(
+                venta => venta.CarritoId == carritoId,
+                cancellationToken);
+
+        if (ventaExistente)
         {
-            var ventaExistente = await dbContext.Ventas
-                .Include(v => v.NotificacionesPedido)
-                .FirstOrDefaultAsync(v => v.CarritoId == carritoId, cancellationToken);
-
-            if (ventaExistente != null)
-            {
-                var notif = ventaExistente.NotificacionesPedido.First();
-
-                return ServiceResult<PedidoResponse>
-                    .Ok(ToResponse(ventaExistente, carrito, notif));
-            }
-
             return ServiceResult<PedidoResponse>
-                .Fail("Carrito cerrado sin venta.");
+                .Fail("El carrito ya fue procesado.");
         }
 
         if (!carrito.Detalles.Any())

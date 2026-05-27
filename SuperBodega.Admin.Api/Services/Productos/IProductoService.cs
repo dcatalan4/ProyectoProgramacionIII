@@ -9,4 +9,5 @@ public interface IProductoService
     Task<ServiceResult<ProductoResponse>> CreateAsync(CrearProductoRequest request, CancellationToken cancellationToken);
     Task<ServiceResult<ProductoResponse>> UpdateAsync(Guid id, ActualizarProductoRequest request, CancellationToken cancellationToken);
     Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
+    Task<int> BackfillIdOriginalesAsync(CancellationToken cancellationToken);
 }

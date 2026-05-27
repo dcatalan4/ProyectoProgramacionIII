@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SuperBodega.Admin.Api.Dtos.Clientes;
 using SuperBodega.Domain.Entities;
 using SuperBodega.Infrastructure.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperBodega.Admin.Api.Services.Clientes;
 
@@ -28,6 +30,13 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
 
     public async Task<ServiceResult<ClienteResponse>> CreateAsync(CrearClienteRequest request, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrWhiteSpace(request.Id) || request.Id.Length < 4)
+        {
+            return ServiceResult<ClienteResponse>.Fail("El ID es obligatorio y debe tener al menos 4 caracteres.");
+        }
+
+        var id = StringToGuid(request.Id);
+
         var emailExists = await dbContext.Clientes.AnyAsync(cliente => cliente.Email == request.Email, cancellationToken);
         if (emailExists)
         {
@@ -36,11 +45,13 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
 
         var cliente = new Cliente
         {
+            Id = id,
+            IdOriginal = request.Id,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Email = request.Email.Trim(),
             Telefono = request.Telefono?.Trim(),
-            DireccionEnvio = request.DireccionEnvio?.Trim()
+            DireccionEnvio = ResolverDireccion(request)
         };
 
         dbContext.Clientes.Add(cliente);
@@ -66,7 +77,8 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
         cliente.Apellido = request.Apellido.Trim();
         cliente.Email = request.Email.Trim();
         cliente.Telefono = request.Telefono?.Trim();
-        cliente.DireccionEnvio = request.DireccionEnvio?.Trim();
+        cliente.DireccionEnvio = ResolverDireccion(request);
+        cliente.IdOriginal = request.Id.Trim();
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ServiceResult<ClienteResponse>.Ok(ToResponse(cliente));
@@ -87,13 +99,31 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
 
     private static ClienteResponse ToResponse(Cliente cliente)
     {
+        var idOriginal = string.IsNullOrEmpty(cliente.IdOriginal)
+            ? cliente.Id.ToString().Substring(0, Math.Min(8, cliente.Id.ToString().Length))
+            : cliente.IdOriginal;
+
         return new ClienteResponse(
             cliente.Id,
+            idOriginal,
             cliente.Nombre,
             cliente.Apellido,
             cliente.Email,
             cliente.Telefono,
             cliente.DireccionEnvio,
             cliente.FechaRegistroUtc);
+    }
+
+    private static string? ResolverDireccion(CrearClienteRequest request)
+    {
+        var direccion = request.DireccionEnvio ?? request.Direccion;
+        return string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim();
+    }
+
+    private static Guid StringToGuid(string input)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
 }

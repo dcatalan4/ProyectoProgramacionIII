@@ -4,6 +4,7 @@ namespace SuperBodega.Admin.Api.Dtos.Proveedores;
 
 public sealed record ProveedorResponse(
     Guid Id,
+    string IdOriginal,
     string Nombre,
     string? Nit,
     string? Telefono,
@@ -13,6 +14,9 @@ public sealed record ProveedorResponse(
 
 public class CrearProveedorRequest
 {
+    [Required, MinLength(4)]
+    public string Id { get; set; } = string.Empty;
+
     [Required, MaxLength(160)]
     public string Nombre { get; set; } = string.Empty;
 

@@ -14,16 +14,20 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReportePeriodoResponse>.Fail(validation);
         }
 
+        // Convertir DateTime a UTC para PostgreSQL
+        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
+        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+
         var ventas = await dbContext.Ventas
             .AsNoTracking()
             .Include(venta => venta.Detalles)
-            .Where(venta => venta.FechaUtc >= desde && venta.FechaUtc <= hasta)
+            .Where(venta => venta.FechaUtc >= desdeUtc && venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var compras = await dbContext.Compras
             .AsNoTracking()
             .Include(compra => compra.Detalles)
-            .Where(compra => compra.FechaUtc >= desde && compra.FechaUtc <= hasta)
+            .Where(compra => compra.FechaUtc >= desdeUtc && compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReportePeriodoResponse>.Ok(new ReportePeriodoResponse(
@@ -43,6 +47,10 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProductoResponse>.Fail(validation);
         }
 
+        // Convertir DateTime a UTC para PostgreSQL
+        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
+        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+
         var producto = await dbContext.Productos.AsNoTracking().FirstOrDefaultAsync(item => item.Id == productoId, cancellationToken);
         if (producto is null)
         {
@@ -54,8 +62,8 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             .Include(detalle => detalle.Venta)
             .Where(detalle => detalle.ProductoId == productoId &&
                               detalle.Venta != null &&
-                              detalle.Venta.FechaUtc >= desde &&
-                              detalle.Venta.FechaUtc <= hasta)
+                              detalle.Venta.FechaUtc >= desdeUtc &&
+                              detalle.Venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var compras = await dbContext.DetallesCompra
@@ -63,8 +71,8 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             .Include(detalle => detalle.Compra)
             .Where(detalle => detalle.ProductoId == productoId &&
                               detalle.Compra != null &&
-                              detalle.Compra.FechaUtc >= desde &&
-                              detalle.Compra.FechaUtc <= hasta)
+                              detalle.Compra.FechaUtc >= desdeUtc &&
+                              detalle.Compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReporteProductoResponse>.Ok(new ReporteProductoResponse(
@@ -84,6 +92,10 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteClienteResponse>.Fail(validation);
         }
 
+        // Convertir DateTime a UTC para PostgreSQL
+        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
+        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+
         var cliente = await dbContext.Clientes.AsNoTracking().FirstOrDefaultAsync(item => item.Id == clienteId, cancellationToken);
         if (cliente is null)
         {
@@ -93,7 +105,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
         var ventas = await dbContext.Ventas
             .AsNoTracking()
             .Include(venta => venta.Detalles)
-            .Where(venta => venta.ClienteId == clienteId && venta.FechaUtc >= desde && venta.FechaUtc <= hasta)
+            .Where(venta => venta.ClienteId == clienteId && venta.FechaUtc >= desdeUtc && venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReporteClienteResponse>.Ok(new ReporteClienteResponse(
@@ -111,6 +123,10 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProveedorResponse>.Fail(validation);
         }
 
+        // Convertir DateTime a UTC para PostgreSQL
+        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
+        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+
         var proveedor = await dbContext.Proveedores.AsNoTracking().FirstOrDefaultAsync(item => item.Id == proveedorId, cancellationToken);
         if (proveedor is null)
         {
@@ -120,7 +136,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
         var compras = await dbContext.Compras
             .AsNoTracking()
             .Include(compra => compra.Detalles)
-            .Where(compra => compra.ProveedorId == proveedorId && compra.FechaUtc >= desde && compra.FechaUtc <= hasta)
+            .Where(compra => compra.ProveedorId == proveedorId && compra.FechaUtc >= desdeUtc && compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var productosActivos = await dbContext.Productos

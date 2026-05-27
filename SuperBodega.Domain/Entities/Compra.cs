@@ -3,6 +3,7 @@ namespace SuperBodega.Domain.Entities;
 public sealed class Compra
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public string IdOriginal { get; set; } = string.Empty;
     public string NumeroCompra { get; set; } = string.Empty;
     public DateTime FechaUtc { get; set; } = DateTime.UtcNow;
     public Guid ProveedorId { get; set; }

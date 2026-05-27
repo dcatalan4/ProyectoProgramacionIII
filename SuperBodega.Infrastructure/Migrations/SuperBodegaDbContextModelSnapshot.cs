@@ -31,7 +31,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualizadoUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<Guid>("ClienteId")
+                    b.Property<Guid?>("ClienteId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreadoUtc")
@@ -89,6 +89,10 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.Property<bool>("EstaActiva")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -107,6 +111,7 @@ namespace SuperBodega.Infrastructure.Migrations
                             Id = new Guid("11111111-1111-1111-1111-111111111111"),
                             Descripcion = "Frutas frescas de temporada",
                             EstaActiva = true,
+                            IdOriginal = "",
                             Nombre = "Frutas"
                         },
                         new
@@ -114,6 +119,7 @@ namespace SuperBodega.Infrastructure.Migrations
                             Id = new Guid("22222222-2222-2222-2222-222222222222"),
                             Descripcion = "Leche, quesos y derivados",
                             EstaActiva = true,
+                            IdOriginal = "",
                             Nombre = "Lacteos"
                         });
                 });
@@ -141,6 +147,10 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.Property<DateTime>("FechaRegistroUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(120)
@@ -166,6 +176,10 @@ namespace SuperBodega.Infrastructure.Migrations
 
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("NumeroCompra")
                         .IsRequired()
@@ -247,7 +261,7 @@ namespace SuperBodega.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClienteId")
+                    b.Property<Guid?>("ClienteId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreadaUtc")
@@ -290,7 +304,7 @@ namespace SuperBodega.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("CategoriaId")
+                    b.Property<Guid?>("CategoriaId")
                         .HasColumnType("uuid");
 
                     b.Property<string>("Descripcion")
@@ -299,6 +313,11 @@ namespace SuperBodega.Infrastructure.Migrations
 
                     b.Property<bool>("EstaActivo")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -342,6 +361,7 @@ namespace SuperBodega.Infrastructure.Migrations
                             CategoriaId = new Guid("11111111-1111-1111-1111-111111111111"),
                             Descripcion = "Manzana fresca por unidad",
                             EstaActivo = true,
+                            IdOriginal = "",
                             Nombre = "Manzana roja",
                             PrecioCompra = 0.80m,
                             PrecioVenta = 1.25m,
@@ -355,6 +375,7 @@ namespace SuperBodega.Infrastructure.Migrations
                             CategoriaId = new Guid("22222222-2222-2222-2222-222222222222"),
                             Descripcion = "Leche entera pasteurizada",
                             EstaActivo = true,
+                            IdOriginal = "",
                             Nombre = "Leche entera 1L",
                             PrecioCompra = 0.75m,
                             PrecioVenta = 1.15m,
@@ -381,6 +402,10 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.Property<bool>("EstaActivo")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasColumnType("text");
+
                     b.Property<string>("Nit")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
@@ -404,6 +429,7 @@ namespace SuperBodega.Infrastructure.Migrations
                             Id = new Guid("33333333-3333-3333-3333-333333333333"),
                             Email = "ventas@distribuidoracentral.test",
                             EstaActivo = true,
+                            IdOriginal = "",
                             Nit = "CF",
                             Nombre = "Distribuidora Central",
                             Telefono = "5555-0101"
@@ -419,7 +445,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.Property<Guid>("CarritoId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClienteId")
+                    b.Property<Guid?>("ClienteId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("Estado")
@@ -427,6 +453,10 @@ namespace SuperBodega.Infrastructure.Migrations
 
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("IdOriginal")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("NumeroVenta")
                         .IsRequired()
@@ -448,8 +478,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.HasOne("SuperBodega.Domain.Entities.Cliente", "Cliente")
                         .WithMany("Carritos")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("Cliente");
                 });
@@ -527,8 +556,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.HasOne("SuperBodega.Domain.Entities.Cliente", "Cliente")
                         .WithMany("NotificacionesPedido")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SuperBodega.Domain.Entities.Venta", "Venta")
                         .WithMany("NotificacionesPedido")
@@ -546,8 +574,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.HasOne("SuperBodega.Domain.Entities.Categoria", "Categoria")
                         .WithMany("Productos")
                         .HasForeignKey("CategoriaId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("SuperBodega.Domain.Entities.Proveedor", "Proveedor")
                         .WithMany("Productos")
@@ -565,8 +592,7 @@ namespace SuperBodega.Infrastructure.Migrations
                     b.HasOne("SuperBodega.Domain.Entities.Cliente", "Cliente")
                         .WithMany("Ventas")
                         .HasForeignKey("ClienteId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Cliente");
                 });

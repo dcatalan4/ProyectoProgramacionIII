@@ -29,6 +29,9 @@ public sealed class CatalogoService(SuperBodegaDbContext dbContext) : ICatalogoS
             .Take(pageSize)
             .Select(producto => new CatalogoProductoResponse(
                 producto.Id,
+                string.IsNullOrEmpty(producto.IdOriginal)
+                    ? producto.Id.ToString().Substring(0, Math.Min(8, producto.Id.ToString().Length))
+                    : producto.IdOriginal,
                 producto.Sku,
                 producto.Nombre,
                 producto.Descripcion,

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperBodega - Administración</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>SuperBodega - Admin</h1>
+            <nav>
+                <a href="index.html">Catálogo</a>
+                <a href="carrito.html">Carrito</a>
+                <a href="admin.html" class="active">Administración</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="admin-tabs">
+            <button class="tab-btn active" data-tab="productos">Productos</button>
+            <button class="tab-btn" data-tab="proveedores">Proveedores</button>
+            <button class="tab-btn" data-tab="clientes">Clientes</button>
+            <button class="tab-btn" data-tab="compras">Compras</button>
+            <button class="tab-btn" data-tab="ventas">Ventas</button>
+            <button class="tab-btn" data-tab="reportes">Reportes</button>
+        </div>
+
+        <!-- Productos -->
+        <div id="tab-productos" class="tab-content active">
+            <div class="section-header">
+                <h2>Gestión de Productos</h2>
+                <button id="btn-nuevo-producto" class="btn btn-primary">Nuevo Producto</button>
+            </div>
+            <div id="lista-productos" class="lista-items"></div>
+        </div>
+
+        <!-- Proveedores -->
+        <div id="tab-proveedores" class="tab-content">
+            <div class="section-header">
+                <h2>Gestión de Proveedores</h2>
+                <button id="btn-nuevo-proveedor" class="btn btn-primary">Nuevo Proveedor</button>
+            </div>
+            <div id="lista-proveedores" class="lista-items"></div>
+        </div>
+
+        <!-- Clientes -->
+        <div id="tab-clientes" class="tab-content">
+            <div class="section-header">
+                <h2>Gestión de Clientes</h2>
+                <button id="btn-nuevo-cliente" class="btn btn-primary">Nuevo Cliente</button>
+            </div>
+            <div id="lista-clientes" class="lista-items"></div>
+        </div>
+
+        <!-- Compras -->
+        <div id="tab-compras" class="tab-content">
+            <div class="section-header">
+                <h2>Gestión de Compras</h2>
+                <button id="btn-nueva-compra" class="btn btn-primary">Nueva Compra</button>
+            </div>
+            <div id="lista-compras" class="lista-items"></div>
+        </div>
+
+        <!-- Ventas -->
+        <div id="tab-ventas" class="tab-content">
+            <div class="section-header">
+                <h2>Gestión de Ventas</h2>
+                <button id="btn-nueva-venta" class="btn btn-primary">Nueva Venta</button>
+            </div>
+            <div id="lista-ventas" class="lista-items"></div>
+        </div>
+
+        <!-- Reportes -->
+        <div id="tab-reportes" class="tab-content">
+            <div class="section-header">
+                <h2>Generar Reportes</h2>
+            </div>
+            <div class="reporte-form">
+                <div class="form-group">
+                    <label>Tipo de Reporte:</label>
+                    <select id="tipo-reporte">
+                        <option value="periodo">Por Período</option>
+                        <option value="producto">Por Producto</option>
+                        <option value="cliente">Por Cliente</option>
+                        <option value="proveedor">Por Proveedor</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Desde:</label>
+                    <input type="date" id="reporte-desde">
+                </div>
+                <div class="form-group">
+                    <label>Hasta:</label>
+                    <input type="date" id="reporte-hasta">
+                </div>
+                <div class="form-group" id="grupo-id" style="display: none;">
+                    <label>ID:</label>
+                    <input type="text" id="reporte-id">
+                </div>
+                <button id="btn-generar-reporte" class="btn btn-primary">Generar Reporte</button>
+            </div>
+            <div id="resultado-reporte" class="resultado-reporte"></div>
+        </div>
+    </main>
+
+    <!-- Modal para productos -->
+    <div id="modal-producto" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-producto-titulo">Nuevo Producto</h2>
+            <form id="form-producto">
+                <input type="hidden" id="producto-id">
+                <div class="form-group">
+                    <label>ID:</label>
+                    <input type="text" id="producto-id-input" required minlength="4" placeholder="ID corto del producto (mínimo 4 caracteres)">
+                </div>
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" id="producto-nombre" required maxlength="160">
+                </div>
+                <div class="form-group">
+                    <label>Descripción:</label>
+                    <textarea id="producto-descripcion" maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Precio Venta:</label>
+                    <input type="number" id="producto-precio-venta" required min="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Precio Compra:</label>
+                    <input type="number" id="producto-precio-compra" required min="0.01" step="0.01">
+                </div>
+                <div class="form-group">
+                    <label>Stock:</label>
+                    <input type="number" id="producto-stock" required min="0">
+                </div>
+                <div class="form-group">
+                    <label>Proveedor ID:</label>
+                    <input type="text" id="producto-proveedor-id" required minlength="4" placeholder="ID corto del proveedor (mínimo 4 caracteres)">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para proveedores -->
+    <div id="modal-proveedor" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-proveedor-titulo">Nuevo Proveedor</h2>
+            <form id="form-proveedor">
+                <input type="hidden" id="proveedor-id">
+                <div class="form-group">
+                    <label>ID:</label>
+                    <input type="text" id="proveedor-id-input" required minlength="4">
+                </div>
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" id="proveedor-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Dirección:</label>
+                    <input type="text" id="proveedor-direccion">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" id="proveedor-telefono">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="proveedor-email">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para clientes -->
+    <div id="modal-cliente" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-cliente-titulo">Nuevo Cliente</h2>
+            <form id="form-cliente">
+                <input type="hidden" id="cliente-id">
+                <div class="form-group">
+                    <label>ID:</label>
+                    <input type="text" id="cliente-id-input" required minlength="4">
+                </div>
+                <div class="form-group">
+                    <label>Nombre:</label>
+                    <input type="text" id="cliente-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label>Apellido:</label>
+                    <input type="text" id="cliente-apellido" required>
+                </div>
+                <div class="form-group">
+                    <label>Dirección:</label>
+                    <input type="text" id="cliente-direccion">
+                </div>
+                <div class="form-group">
+                    <label>Teléfono:</label>
+                    <input type="text" id="cliente-telefono">
+                </div>
+                <div class="form-group">
+                    <label>Email:</label>
+                    <input type="email" id="cliente-email">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para compras -->
+    <div id="modal-compra" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-compra-titulo">Nueva Compra</h2>
+            <form id="form-compra">
+                <input type="hidden" id="compra-id">
+                <div class="form-group">
+                    <label>ID Compra:</label>
+                    <input type="text" id="compra-id-input" required minlength="4" placeholder="ID corto de la compra (mínimo 4 caracteres)">
+                </div>
+                <div class="form-group">
+                    <label>Número de Compra:</label>
+                    <input type="text" id="compra-numero" required maxlength="40">
+                </div>
+                <div class="form-group">
+                    <label>Proveedor ID:</label>
+                    <input type="text" id="compra-proveedor-id" required minlength="4">
+                </div>
+                <div class="form-group">
+                    <label>Fecha:</label>
+                    <input type="date" id="compra-fecha" required>
+                </div>
+                <div class="form-group">
+                    <label>Producto ID:</label>
+                    <input type="text" id="compra-producto-id" required>
+                </div>
+                <div class="form-group">
+                    <label>Cantidad:</label>
+                    <input type="number" id="compra-cantidad" required min="1">
+                </div>
+                <div class="form-group">
+                    <label>Costo Unitario:</label>
+                    <input type="number" id="compra-costo-unitario" required min="0.01" step="0.01">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal para ventas -->
+    <div id="modal-venta" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modal-venta-titulo">Nueva Venta</h2>
+            <form id="form-venta" novalidate>
+                <input type="hidden" id="venta-id">
+                <div class="form-group">
+                    <label>ID Venta:</label>
+                    <input type="text" id="venta-id-input" required minlength="4" placeholder="ID corto de la venta (mínimo 4 caracteres)">
+                </div>
+                <div class="form-group">
+                    <label>Número Venta:</label>
+                    <input type="text" id="venta-numero" required maxlength="40">
+                </div>
+                <div class="form-group">
+                    <label>Cliente ID:</label>
+                    <input type="text" id="venta-cliente-id" required minlength="4">
+                </div>
+                <div class="form-group">
+                    <label>Fecha:</label>
+                    <input type="date" id="venta-fecha" required>
+                </div>
+                <div class="form-group" id="grupo-detalles-venta">
+                    <label>Producto ID:</label>
+                    <input type="text" id="venta-producto-id" required minlength="4" placeholder="ID corto del producto (mínimo 4 caracteres)">
+                </div>
+                <div class="form-group" id="grupo-cantidad-venta">
+                    <label>Cantidad:</label>
+                    <input type="number" id="venta-cantidad" required min="1" placeholder="Cantidad a vender">
+                </div>
+                <div class="form-group" id="grupo-estado" style="display: none;">
+                    <label>Estado:</label>
+                    <select id="venta-estado">
+                        <option value="1">Recibida</option>
+                        <option value="2">Pagada</option>
+                        <option value="3">Preparando</option>
+                        <option value="4">Enviada</option>
+                        <option value="5">Entregada</option>
+                        <option value="6">Cancelada</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="api.js?v=3"></script>
+    <script src="admin.js?v=3"></script>
+</body>
+</html>

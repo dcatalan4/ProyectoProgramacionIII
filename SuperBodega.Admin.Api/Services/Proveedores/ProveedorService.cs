@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SuperBodega.Admin.Api.Dtos.Proveedores;
 using SuperBodega.Domain.Entities;
 using SuperBodega.Infrastructure.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperBodega.Admin.Api.Services.Proveedores;
 
@@ -28,7 +30,14 @@ public sealed class ProveedorService(SuperBodegaDbContext dbContext) : IProveedo
 
     public async Task<ServiceResult<ProveedorResponse>> CreateAsync(CrearProveedorRequest request, CancellationToken cancellationToken)
     {
-        var validation = await ValidateUniqueAsync(Guid.Empty, request.Nit, request.Email, cancellationToken);
+        if (string.IsNullOrWhiteSpace(request.Id) || request.Id.Length < 4)
+        {
+            return ServiceResult<ProveedorResponse>.Fail("El ID es obligatorio y debe tener al menos 4 caracteres.");
+        }
+
+        var id = StringToGuid(request.Id);
+
+        var validation = await ValidateUniqueAsync(id, request.Nit, request.Email, cancellationToken);
         if (validation is not null)
         {
             return ServiceResult<ProveedorResponse>.Fail(validation);
@@ -36,6 +45,8 @@ public sealed class ProveedorService(SuperBodegaDbContext dbContext) : IProveedo
 
         var proveedor = new Proveedor
         {
+            Id = id,
+            IdOriginal = request.Id,
             Nombre = request.Nombre.Trim(),
             Nit = request.Nit?.Trim(),
             Telefono = request.Telefono?.Trim(),
@@ -105,13 +116,25 @@ public sealed class ProveedorService(SuperBodegaDbContext dbContext) : IProveedo
 
     private static ProveedorResponse ToResponse(Proveedor proveedor)
     {
+        var idOriginal = string.IsNullOrEmpty(proveedor.IdOriginal)
+            ? proveedor.Id.ToString().Substring(0, Math.Min(8, proveedor.Id.ToString().Length))
+            : proveedor.IdOriginal;
+
         return new ProveedorResponse(
             proveedor.Id,
+            idOriginal,
             proveedor.Nombre,
             proveedor.Nit,
             proveedor.Telefono,
             proveedor.Email,
             proveedor.Direccion,
             proveedor.EstaActivo);
+    }
+
+    private static Guid StringToGuid(string input)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
 }

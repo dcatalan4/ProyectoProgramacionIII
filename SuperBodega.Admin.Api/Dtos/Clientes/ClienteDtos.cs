@@ -4,6 +4,7 @@ namespace SuperBodega.Admin.Api.Dtos.Clientes;
 
 public sealed record ClienteResponse(
     Guid Id,
+    string IdOriginal,
     string Nombre,
     string Apellido,
     string Email,
@@ -13,6 +14,9 @@ public sealed record ClienteResponse(
 
 public class CrearClienteRequest
 {
+    [Required, MinLength(4)]
+    public string Id { get; set; } = string.Empty;
+
     [Required, MaxLength(120)]
     public string Nombre { get; set; } = string.Empty;
 
@@ -27,6 +31,9 @@ public class CrearClienteRequest
 
     [MaxLength(300)]
     public string? DireccionEnvio { get; set; }
+
+    [MaxLength(300)]
+    public string? Direccion { get; set; }
 }
 
 public sealed class ActualizarClienteRequest : CrearClienteRequest;

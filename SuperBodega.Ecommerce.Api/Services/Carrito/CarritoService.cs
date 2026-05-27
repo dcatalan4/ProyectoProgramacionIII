@@ -7,12 +7,20 @@ namespace SuperBodega.Ecommerce.Api.Services.Carrito;
 
 public sealed class CarritoService(SuperBodegaDbContext dbContext) : ICarritoService
 {
+    public async Task<CarritoResponse?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await GetResponseAsync(id, cancellationToken);
+    }
+
     public async Task<ServiceResult<CarritoResponse>> CreateAsync(CrearCarritoRequest request, CancellationToken cancellationToken)
     {
-        var clienteExists = await dbContext.Clientes.AnyAsync(cliente => cliente.Id == request.ClienteId, cancellationToken);
-        if (!clienteExists)
+        if (request.ClienteId.HasValue)
         {
-            return ServiceResult<CarritoResponse>.Fail("El cliente no existe.");
+            var clienteExists = await dbContext.Clientes.AnyAsync(cliente => cliente.Id == request.ClienteId, cancellationToken);
+            if (!clienteExists)
+            {
+                return ServiceResult<CarritoResponse>.Fail("El cliente no existe.");
+            }
         }
 
         var carrito = new SuperBodega.Domain.Entities.Carrito
@@ -81,6 +89,56 @@ public sealed class CarritoService(SuperBodegaDbContext dbContext) : ICarritoSer
 
         carrito.ActualizadoUtc = DateTime.UtcNow;
 
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        return ServiceResult<CarritoResponse>.Ok((await GetResponseAsync(carrito.Id, cancellationToken))!);
+    }
+
+    public async Task<ServiceResult<CarritoResponse>> UpdateItemAsync(
+        ActualizarCarritoItemRequest request,
+        CancellationToken cancellationToken)
+    {
+        var carrito = await dbContext.Carritos
+            .Include(item => item.Detalles)
+            .FirstOrDefaultAsync(item => item.Id == request.CarritoId, cancellationToken);
+        if (carrito is null)
+        {
+            return ServiceResult<CarritoResponse>.Fail("El carrito no existe.");
+        }
+
+        if (carrito.Estado != EstadoCarrito.Abierto)
+        {
+            return ServiceResult<CarritoResponse>.Fail("El carrito no esta abierto.");
+        }
+
+        var existingItem = carrito.Detalles.FirstOrDefault(item => item.ProductoId == request.ProductoId);
+        if (existingItem is null)
+        {
+            return ServiceResult<CarritoResponse>.Fail("El producto no esta en el carrito.");
+        }
+
+        if (request.Cantidad <= 0)
+        {
+            dbContext.CarritoDetalles.Remove(existingItem);
+        }
+        else
+        {
+            var producto = await dbContext.Productos.FindAsync([request.ProductoId], cancellationToken);
+            if (producto is null || !producto.EstaActivo)
+            {
+                return ServiceResult<CarritoResponse>.Fail("El producto no existe o no esta activo.");
+            }
+
+            if (request.Cantidad > producto.Stock)
+            {
+                return ServiceResult<CarritoResponse>.Fail($"Stock insuficiente para {producto.Nombre}.");
+            }
+
+            existingItem.Cantidad = request.Cantidad;
+            existingItem.PrecioUnitario = producto.PrecioVenta;
+        }
+
+        carrito.ActualizadoUtc = DateTime.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return ServiceResult<CarritoResponse>.Ok((await GetResponseAsync(carrito.Id, cancellationToken))!);

@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using SuperBodega.Admin.Api.Dtos.Reportes;
 using SuperBodega.Admin.Api.Services.Reportes;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperBodega.Admin.Api.Controllers;
 
@@ -18,36 +20,46 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("producto/{productoId:guid}")]
+    [HttpGet("producto/{productoId}")]
     public async Task<ActionResult<ReporteProductoResponse>> PorProducto(
-        Guid productoId,
+        string productoId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var result = await reportes.PorProductoAsync(productoId, desde, hasta, cancellationToken);
+        var guid = StringToGuid(productoId);
+        var result = await reportes.PorProductoAsync(guid, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("cliente/{clienteId:guid}")]
+    [HttpGet("cliente/{clienteId}")]
     public async Task<ActionResult<ReporteClienteResponse>> PorCliente(
-        Guid clienteId,
+        string clienteId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var result = await reportes.PorClienteAsync(clienteId, desde, hasta, cancellationToken);
+        var guid = StringToGuid(clienteId);
+        var result = await reportes.PorClienteAsync(guid, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("proveedor/{proveedorId:guid}")]
+    [HttpGet("proveedor/{proveedorId}")]
     public async Task<ActionResult<ReporteProveedorResponse>> PorProveedor(
-        Guid proveedorId,
+        string proveedorId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var result = await reportes.PorProveedorAsync(proveedorId, desde, hasta, cancellationToken);
+        var guid = StringToGuid(proveedorId);
+        var result = await reportes.PorProveedorAsync(guid, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
+    }
+
+    private static Guid StringToGuid(string input)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
 }

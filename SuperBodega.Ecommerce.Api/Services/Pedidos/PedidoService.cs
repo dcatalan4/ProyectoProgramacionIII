@@ -336,7 +336,7 @@ public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer k
 
         var mensaje =
 
-            $"Pedido {venta.NumeroVenta} recibido por SuperBodega. Total: {carrito.Total:C}.";
+            $"Pedido {venta.NumeroVenta} recibido por SuperBodega. Total: Q{carrito.Total:0.00}.";
 
 
 

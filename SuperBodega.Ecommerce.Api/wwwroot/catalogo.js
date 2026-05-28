@@ -73,7 +73,7 @@ function renderizarCatalogo() {
             <h3>${p.nombre}</h3>
             <p>${p.descripcion || 'Sin descripción'}</p>
             <p>Stock: ${p.stock}</p>
-            <div class="precio">$${p.precioVenta.toFixed(2)}</div>
+            <div class="precio">Q${p.precioVenta.toFixed(2)}</div>
             <button onclick="agregarAlCarrito('${p.id}')" class="btn btn-primary">Agregar al Carrito</button>
         `;
         grid.appendChild(card);
@@ -148,7 +148,7 @@ document.getElementById('busqueda').addEventListener('input', (e) => {
             <h3>${p.nombre}</h3>
             <p>${p.descripcion || 'Sin descripción'}</p>
             <p>Stock: ${p.stock}</p>
-            <div class="precio">$${p.precioVenta.toFixed(2)}</div>
+            <div class="precio">Q${p.precioVenta.toFixed(2)}</div>
             <button onclick="agregarAlCarrito('${p.id}')" class="btn btn-primary">Agregar al Carrito</button>
         `;
         grid.appendChild(card);

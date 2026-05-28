@@ -37,8 +37,8 @@ function renderizarCarrito() {
         div.innerHTML = `
             <div class="carrito-item-info">
                 <h3>${item.producto || item.productoId}</h3>
-                <p>Precio: $${item.precioUnitario?.toFixed(2) || '0.00'}</p>
-                <p>Subtotal: $${subtotal.toFixed(2)}</p>
+                <p>Precio: Q${item.precioUnitario?.toFixed(2) || '0.00'}</p>
+                <p>Subtotal: Q${subtotal.toFixed(2)}</p>
             </div>
             <div class="carrito-item-actions">
                 <div class="cantidad">

@@ -2,6 +2,10 @@ let productos = [];
 let categoriaSeleccionada = '';
 let clientesCompra = [];
 
+function formatearQuetzales(valor) {
+    return 'Q' + Number(valor || 0).toFixed(2);
+}
+
 async function cargarCatalogo() {
     try {
         const response = await obtenerCatalogo(1, 100, categoriaSeleccionada || null);
@@ -73,7 +77,7 @@ function renderizarCatalogo() {
             <h3>${p.nombre}</h3>
             <p>${p.descripcion || 'Sin descripción'}</p>
             <p>Stock: ${p.stock}</p>
-            <div class="precio">Q${p.precioVenta.toFixed(2)}</div>
+            <div class="precio">${formatearQuetzales(p.precioVenta)}</div>
             <button onclick="agregarAlCarrito('${p.id}')" class="btn btn-primary">Agregar al Carrito</button>
         `;
         grid.appendChild(card);
@@ -148,7 +152,7 @@ document.getElementById('busqueda').addEventListener('input', (e) => {
             <h3>${p.nombre}</h3>
             <p>${p.descripcion || 'Sin descripción'}</p>
             <p>Stock: ${p.stock}</p>
-            <div class="precio">Q${p.precioVenta.toFixed(2)}</div>
+            <div class="precio">${formatearQuetzales(p.precioVenta)}</div>
             <button onclick="agregarAlCarrito('${p.id}')" class="btn btn-primary">Agregar al Carrito</button>
         `;
         grid.appendChild(card);

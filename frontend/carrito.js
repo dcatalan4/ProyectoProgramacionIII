@@ -1,5 +1,9 @@
 let carrito = { id: null, items: [] };
 
+function formatearQuetzales(valor) {
+    return 'Q' + Number(valor || 0).toFixed(2);
+}
+
 async function cargarCarrito() {
     try {
         carrito = obtenerCarritoLocal();
@@ -37,8 +41,8 @@ function renderizarCarrito() {
         div.innerHTML = `
             <div class="carrito-item-info">
                 <h3>${item.producto || item.productoId}</h3>
-                <p>Precio: Q${item.precioUnitario?.toFixed(2) || '0.00'}</p>
-                <p>Subtotal: Q${subtotal.toFixed(2)}</p>
+                <p>Precio: ${formatearQuetzales(item.precioUnitario)}</p>
+                <p>Subtotal: ${formatearQuetzales(subtotal)}</p>
             </div>
             <div class="carrito-item-actions">
                 <div class="cantidad">

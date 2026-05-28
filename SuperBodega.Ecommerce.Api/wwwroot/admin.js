@@ -34,6 +34,10 @@ function formatearFecha(valor) {
     return Number.isNaN(fecha.getTime()) ? 'N/A' : fecha.toLocaleDateString();
 }
 
+function formatearQuetzales(valor) {
+    return 'Q' + Number(valor || 0).toFixed(2);
+}
+
 function formatearEstadoVenta(estado) {
     const mapa = {
         1: 'Recibida',
@@ -98,8 +102,8 @@ async function cargarProductos() {
                 <strong>${p.Nombre || p.nombre}</strong>
                 <p>ID: ${obtenerIdUsuario(p) || 'N/A'}</p>
                 <p>Descripción: ${p.Descripcion || p.descripcion || 'Sin descripción'}</p>
-                <p>Precio Venta: Q${(p.PrecioVenta || p.precioVenta).toFixed(2)}</p>
-                <p>Precio Compra: Q${(p.PrecioCompra || p.precioCompra).toFixed(2)}</p>
+                <p>Precio Venta: ${formatearQuetzales(p.PrecioVenta ?? p.precioVenta)}</p>
+                <p>Precio Compra: ${formatearQuetzales(p.PrecioCompra ?? p.precioCompra)}</p>
                 <p>Stock: ${p.Stock || p.stock}</p>
                 <p>Proveedor: ${p.Proveedor || p.proveedor || 'N/A'}</p>
                 <p>Activo: ${p.EstaActivo || p.estaActivo ? 'Sí' : 'No'}</p>
@@ -695,7 +699,7 @@ function mostrarReporte(reporte, tipo) {
                 <div class="item-row">
                     <div>${r.id}</div>
                     <div>${new Date(r.fecha).toLocaleDateString()}</div>
-                    <div>Q${r.total?.toFixed(2) || '0.00'}</div>
+                    <div>${formatearQuetzales(r.total)}</div>
                     <div>${r.estado || '-'}</div>
                 </div>
             `).join('')}
@@ -713,7 +717,7 @@ function mostrarReporte(reporte, tipo) {
                     <div>${r.id}</div>
                     <div>${r.nombre || '-'}</div>
                     <div>${r.cantidad || 0}</div>
-                    <div>Q${r.total?.toFixed(2) || '0.00'}</div>
+                    <div>${formatearQuetzales(r.total)}</div>
                 </div>
             `).join('')}
         `;

@@ -5,6 +5,7 @@ namespace SuperBodega.Ecommerce.Api.Dtos.Carrito;
 
 public sealed class CrearCarritoRequest
 {
+    [Required]
     public Guid? ClienteId { get; set; }
 }
 

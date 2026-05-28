@@ -152,6 +152,16 @@ public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer k
 
         }
 
+        if (!carrito.ClienteId.HasValue)
+
+        {
+
+            return ServiceResult<PedidoResponse>
+
+                .Fail("El carrito debe estar asociado a un cliente.");
+
+        }
+
 
 
         var stockValidation = ValidateStock(carrito);

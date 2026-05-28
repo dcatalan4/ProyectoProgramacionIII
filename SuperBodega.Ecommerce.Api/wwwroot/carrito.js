@@ -101,7 +101,7 @@ async function procesarPedido() {
         const response = await crearPedidoSincrono(carrito.id);
         alert(`Pedido procesado exitosamente. Venta ID: ${response.ventaId || response.id || 'N/A'}`);
 
-        carrito = { id: null, items: [] };
+        carrito = { id: null, clienteId: null, items: [] };
         guardarCarritoLocal(carrito);
         renderizarCarrito();
     } catch (error) {

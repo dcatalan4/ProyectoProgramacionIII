@@ -1,5 +1,6 @@
 let productos = [];
 let categoriaSeleccionada = '';
+let clientesCompra = [];
 
 async function cargarCatalogo() {
     try {
@@ -8,6 +9,56 @@ async function cargarCatalogo() {
         renderizarCatalogo();
     } catch (error) {
         console.error('Error al cargar catálogo:', error);
+    }
+}
+
+async function cargarClientesCompra() {
+    try {
+        clientesCompra = await obtenerClientes();
+        const select = document.getElementById('cliente-compra');
+        select.innerHTML = '<option value="">Selecciona un cliente</option>';
+
+        clientesCompra.forEach(cliente => {
+            const option = document.createElement('option');
+            option.value = cliente.Id || cliente.id;
+            option.textContent = `${cliente.Nombre || cliente.nombre} ${cliente.Apellido || cliente.apellido}`;
+            select.appendChild(option);
+        });
+
+        const carrito = obtenerCarritoLocal();
+        if (carrito.clienteId) {
+            select.value = carrito.clienteId;
+        }
+    } catch (error) {
+        console.error('Error al cargar clientes:', error);
+    }
+}
+
+async function crearClienteDesdeCatalogo() {
+    const cliente = {
+        Id: document.getElementById('cliente-id').value.trim(),
+        Nombre: document.getElementById('cliente-nombre').value.trim(),
+        Apellido: document.getElementById('cliente-apellido').value.trim(),
+        Email: document.getElementById('cliente-email').value.trim(),
+        Telefono: document.getElementById('cliente-telefono').value.trim(),
+        DireccionEnvio: document.getElementById('cliente-direccion').value.trim()
+    };
+
+    if (!cliente.Id || cliente.Id.length < 4 || !cliente.Nombre || !cliente.Apellido || !cliente.Email) {
+        alert('Ingresa ID, nombre, apellido y email del cliente');
+        return;
+    }
+
+    try {
+        const nuevoCliente = await crearCliente(cliente);
+        await cargarClientesCompra();
+        document.getElementById('cliente-compra').value = nuevoCliente.Id || nuevoCliente.id;
+        guardarCarritoLocal({ id: null, clienteId: nuevoCliente.Id || nuevoCliente.id, items: [] });
+        document.querySelectorAll('.cliente-rapido input').forEach(input => input.value = '');
+        alert('Cliente creado y seleccionado');
+    } catch (error) {
+        console.error('Error al crear cliente:', error);
+        alert(error.message || 'Error al crear cliente');
     }
 }
 
@@ -31,11 +82,22 @@ function renderizarCatalogo() {
 
 async function agregarAlCarrito(productoId) {
     try {
+        const clienteId = document.getElementById('cliente-compra').value;
+        if (!clienteId) {
+            alert('Selecciona un cliente antes de agregar productos al carrito');
+            return;
+        }
+
         let carrito = obtenerCarritoLocal();
+
+        if (carrito.id && carrito.clienteId && carrito.clienteId !== clienteId) {
+            carrito = { id: null, clienteId: null, items: [] };
+        }
         
         if (!carrito.id) {
-            const nuevoCarrito = await crearCarrito();
+            const nuevoCarrito = await crearCarrito(clienteId);
             carrito.id = nuevoCarrito.id;
+            carrito.clienteId = nuevoCarrito.clienteId;
             carrito.items = [];
         }
         
@@ -59,6 +121,15 @@ document.getElementById('filtro-categoria').addEventListener('change', (e) => {
     categoriaSeleccionada = e.target.value;
     cargarCatalogo();
 });
+
+document.getElementById('cliente-compra').addEventListener('change', (e) => {
+    const carrito = obtenerCarritoLocal();
+    if (carrito.id && carrito.clienteId && carrito.clienteId !== e.target.value) {
+        guardarCarritoLocal({ id: null, clienteId: null, items: [] });
+    }
+});
+
+document.getElementById('btn-crear-cliente-compra').addEventListener('click', crearClienteDesdeCatalogo);
 
 document.getElementById('busqueda').addEventListener('input', (e) => {
     const busqueda = e.target.value.toLowerCase();
@@ -84,4 +155,7 @@ document.getElementById('busqueda').addEventListener('input', (e) => {
     });
 });
 
-document.addEventListener('DOMContentLoaded', cargarCatalogo);
+document.addEventListener('DOMContentLoaded', async () => {
+    await cargarClientesCompra();
+    await cargarCatalogo();
+});

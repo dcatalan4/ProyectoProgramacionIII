@@ -28,10 +28,10 @@ async function obtenerCatalogo(page = 1, pageSize = 10, categoriaId = null) {
 }
 
 // Carrito
-async function crearCarrito() {
+async function crearCarrito(clienteId) {
     return fetchAPI(`${API_ECOMMERCE}/carrito`, {
         method: 'POST',
-        body: JSON.stringify({})
+        body: JSON.stringify({ clienteId })
     });
 }
 
@@ -281,7 +281,7 @@ async function obtenerReporteProveedor(proveedorId, desde, hasta) {
 // Funciones de utilidad para el carrito local
 function obtenerCarritoLocal() {
     const carrito = localStorage.getItem('carrito');
-    return carrito ? JSON.parse(carrito) : { id: null, items: [] };
+    return carrito ? JSON.parse(carrito) : { id: null, clienteId: null, items: [] };
 }
 
 function guardarCarritoLocal(carrito) {

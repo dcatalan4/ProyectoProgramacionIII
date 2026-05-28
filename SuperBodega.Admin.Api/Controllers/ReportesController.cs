@@ -1,8 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SuperBodega.Admin.Api.Dtos.Reportes;
 using SuperBodega.Admin.Api.Services.Reportes;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace SuperBodega.Admin.Api.Controllers;
 
@@ -27,8 +25,7 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var guid = StringToGuid(productoId);
-        var result = await reportes.PorProductoAsync(guid, desde, hasta, cancellationToken);
+        var result = await reportes.PorProductoAsync(productoId, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
@@ -39,8 +36,7 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var guid = StringToGuid(clienteId);
-        var result = await reportes.PorClienteAsync(guid, desde, hasta, cancellationToken);
+        var result = await reportes.PorClienteAsync(clienteId, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
@@ -51,15 +47,7 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
     {
-        var guid = StringToGuid(proveedorId);
-        var result = await reportes.PorProveedorAsync(guid, desde, hasta, cancellationToken);
+        var result = await reportes.PorProveedorAsync(proveedorId, desde, hasta, cancellationToken);
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
-    }
-
-    private static Guid StringToGuid(string input)
-    {
-        using var md5 = MD5.Create();
-        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
-        return new Guid(hash);
     }
 }

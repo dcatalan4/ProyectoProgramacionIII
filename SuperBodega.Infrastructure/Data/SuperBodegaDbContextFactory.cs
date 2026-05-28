@@ -8,7 +8,7 @@ public sealed class SuperBodegaDbContextFactory : IDesignTimeDbContextFactory<Su
     public SuperBodegaDbContext CreateDbContext(string[] args)
     {
         var options = new DbContextOptionsBuilder<SuperBodegaDbContext>()
-            .UseNpgsql("Host=localhost;Port=5432;Database=superbodega;Username=superbodega;Password=superbodega")
+            .UseNpgsql("Host=localhost;Port=55432;Database=superbodega;Username=superbodega;Password=superbodega")
             .Options;
 
         return new SuperBodegaDbContext(options);

@@ -10,13 +10,14 @@ public class KafkaConsumerService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly IConsumer<Ignore, string> _consumer;
 
-    public KafkaConsumerService(IServiceProvider serviceProvider)
+    public KafkaConsumerService(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
+        var bootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
 
         var config = new ConsumerConfig
         {
-            BootstrapServers = "localhost:9092",
+            BootstrapServers = bootstrapServers,
             GroupId = "pedidos-group",
             AutoOffsetReset = AutoOffsetReset.Earliest
         };

@@ -14,7 +14,6 @@ public sealed record ClienteResponse(
 
 public class CrearClienteRequest
 {
-    [Required, MinLength(4)]
     public string Id { get; set; } = string.Empty;
 
     [Required, MaxLength(120)]

@@ -6,6 +6,38 @@ function formatearQuetzales(valor) {
     return 'Q' + Number(valor || 0).toFixed(2);
 }
 
+function obtenerNombreCliente(cliente) {
+    return `${cliente.Nombre || cliente.nombre || ''} ${cliente.Apellido || cliente.apellido || ''}`.trim();
+}
+
+function toClienteLocal(cliente) {
+    return {
+        id: cliente.Id || cliente.id,
+        idOriginal: cliente.IdOriginal || cliente.idOriginal || '',
+        nombre: cliente.Nombre || cliente.nombre || '',
+        apellido: cliente.Apellido || cliente.apellido || '',
+        email: cliente.Email || cliente.email || '',
+        telefono: cliente.Telefono || cliente.telefono || '',
+        direccion: cliente.DireccionEnvio || cliente.direccionEnvio || cliente.Direccion || cliente.direccion || ''
+    };
+}
+
+function guardarClienteSeleccionado(clienteId) {
+    const cliente = clientesCompra.find(item => (item.Id || item.id) === clienteId);
+    const carrito = obtenerCarritoLocal();
+
+    if (!cliente) {
+        carrito.clienteId = clienteId || null;
+        carrito.cliente = null;
+        guardarCarritoLocal(carrito);
+        return;
+    }
+
+    carrito.clienteId = clienteId;
+    carrito.cliente = toClienteLocal(cliente);
+    guardarCarritoLocal(carrito);
+}
+
 async function cargarCatalogo() {
     try {
         const response = await obtenerCatalogo(1, 100, categoriaSeleccionada || null);
@@ -25,13 +57,16 @@ async function cargarClientesCompra() {
         clientesCompra.forEach(cliente => {
             const option = document.createElement('option');
             option.value = cliente.Id || cliente.id;
-            option.textContent = `${cliente.Nombre || cliente.nombre} ${cliente.Apellido || cliente.apellido}`;
+            option.textContent = obtenerNombreCliente(cliente);
             select.appendChild(option);
         });
 
         const carrito = obtenerCarritoLocal();
         if (carrito.clienteId) {
             select.value = carrito.clienteId;
+            if (!carrito.cliente) {
+                guardarClienteSeleccionado(carrito.clienteId);
+            }
         }
     } catch (error) {
         console.error('Error al cargar clientes:', error);
@@ -40,7 +75,6 @@ async function cargarClientesCompra() {
 
 async function crearClienteDesdeCatalogo() {
     const cliente = {
-        Id: document.getElementById('cliente-id').value.trim(),
         Nombre: document.getElementById('cliente-nombre').value.trim(),
         Apellido: document.getElementById('cliente-apellido').value.trim(),
         Email: document.getElementById('cliente-email').value.trim(),
@@ -48,8 +82,8 @@ async function crearClienteDesdeCatalogo() {
         DireccionEnvio: document.getElementById('cliente-direccion').value.trim()
     };
 
-    if (!cliente.Id || cliente.Id.length < 4 || !cliente.Nombre || !cliente.Apellido || !cliente.Email) {
-        alert('Ingresa ID, nombre, apellido y email del cliente');
+    if (!cliente.Nombre || !cliente.Apellido || !cliente.Email) {
+        alert('Ingresa nombre, apellido y email del cliente');
         return;
     }
 
@@ -57,7 +91,12 @@ async function crearClienteDesdeCatalogo() {
         const nuevoCliente = await crearCliente(cliente);
         await cargarClientesCompra();
         document.getElementById('cliente-compra').value = nuevoCliente.Id || nuevoCliente.id;
-        guardarCarritoLocal({ id: null, clienteId: nuevoCliente.Id || nuevoCliente.id, items: [] });
+        guardarCarritoLocal({
+            id: null,
+            clienteId: nuevoCliente.Id || nuevoCliente.id,
+            cliente: toClienteLocal(nuevoCliente),
+            items: []
+        });
         document.querySelectorAll('.cliente-rapido input').forEach(input => input.value = '');
         alert('Cliente creado y seleccionado');
     } catch (error) {
@@ -95,7 +134,12 @@ async function agregarAlCarrito(productoId) {
         let carrito = obtenerCarritoLocal();
 
         if (carrito.id && carrito.clienteId && carrito.clienteId !== clienteId) {
-            carrito = { id: null, clienteId: null, items: [] };
+            carrito = { id: null, clienteId: clienteId, cliente: null, items: [] };
+        }
+
+        const clienteSeleccionado = clientesCompra.find(cliente => (cliente.Id || cliente.id) === clienteId);
+        if (clienteSeleccionado) {
+            carrito.cliente = toClienteLocal(clienteSeleccionado);
         }
         
         if (!carrito.id) {
@@ -129,8 +173,10 @@ document.getElementById('filtro-categoria').addEventListener('change', (e) => {
 document.getElementById('cliente-compra').addEventListener('change', (e) => {
     const carrito = obtenerCarritoLocal();
     if (carrito.id && carrito.clienteId && carrito.clienteId !== e.target.value) {
-        guardarCarritoLocal({ id: null, clienteId: null, items: [] });
+        guardarCarritoLocal({ id: null, clienteId: null, cliente: null, items: [] });
     }
+
+    guardarClienteSeleccionado(e.target.value);
 });
 
 document.getElementById('btn-crear-cliente-compra').addEventListener('click', crearClienteDesdeCatalogo);

@@ -184,6 +184,30 @@ h2 {
     margin-bottom: 30px;
 }
 
+.cliente-carrito {
+    background-color: #112240;
+    border: 1px solid #233554;
+    border-radius: 10px;
+    padding: 18px 20px;
+    margin-bottom: 20px;
+}
+
+.cliente-carrito strong {
+    color: #64ffda;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.cliente-carrito p {
+    margin-bottom: 6px;
+}
+
+.cliente-carrito .btn {
+    display: inline-block;
+    margin-top: 8px;
+    text-decoration: none;
+}
+
 .carrito-item {
     display: flex;
     justify-content: space-between;

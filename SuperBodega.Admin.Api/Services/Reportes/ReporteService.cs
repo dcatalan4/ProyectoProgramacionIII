@@ -14,9 +14,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReportePeriodoResponse>.Fail(validation);
         }
 
-        // Convertir DateTime a UTC para PostgreSQL
-        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
-        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
 
         var ventas = await dbContext.Ventas
             .AsNoTracking()
@@ -47,9 +45,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProductoResponse>.Fail(validation);
         }
 
-        // Convertir DateTime a UTC para PostgreSQL
-        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
-        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
 
         var producto = await FindProductoAsync(productoId, cancellationToken);
         if (producto is null)
@@ -93,9 +89,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteClienteResponse>.Fail(validation);
         }
 
-        // Convertir DateTime a UTC para PostgreSQL
-        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
-        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
 
         var cliente = await FindClienteAsync(clienteId, cancellationToken);
         if (cliente is null)
@@ -125,9 +119,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProveedorResponse>.Fail(validation);
         }
 
-        // Convertir DateTime a UTC para PostgreSQL
-        var desdeUtc = desde.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(desde, DateTimeKind.Utc) : desde.ToUniversalTime();
-        var hastaUtc = hasta.Kind == DateTimeKind.Unspecified ? DateTime.SpecifyKind(hasta, DateTimeKind.Utc) : hasta.ToUniversalTime();
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
 
         var proveedor = await FindProveedorAsync(proveedorId, cancellationToken);
         if (proveedor is null)
@@ -161,6 +153,22 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
         }
 
         return null;
+    }
+
+    private static (DateTime DesdeUtc, DateTime HastaUtc) ToUtcInclusiveRange(DateTime desde, DateTime hasta)
+    {
+        var hastaFinal = hasta.TimeOfDay == TimeSpan.Zero
+            ? hasta.Date.AddDays(1).AddTicks(-1)
+            : hasta;
+
+        return (ToUtc(desde), ToUtc(hastaFinal));
+    }
+
+    private static DateTime ToUtc(DateTime fecha)
+    {
+        return fecha.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(fecha, DateTimeKind.Utc)
+            : fecha.ToUniversalTime();
     }
 
     private async Task<SuperBodega.Domain.Entities.Producto?> FindProductoAsync(string id, CancellationToken cancellationToken)

@@ -29,9 +29,19 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
         }
 
         var id = StringToGuid(request.Id);
-        var proveedorId = StringToGuid(request.ProveedorId);
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
+        {
+            return ServiceResult<CompraResponse>.Fail("El proveedor no existe.");
+        }
 
-        var validation = await ValidateAsync(Guid.Empty, request, proveedorId, cancellationToken);
+        var productoIds = await ResolveDetalleProductoIdsAsync(request.Detalles, cancellationToken);
+        if (productoIds is null)
+        {
+            return ServiceResult<CompraResponse>.Fail("Uno o mas productos no existen.");
+        }
+
+        var validation = await ValidateAsync(Guid.Empty, request, cancellationToken);
         if (validation is not null)
         {
             return ServiceResult<CompraResponse>.Fail(validation);
@@ -43,11 +53,11 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
             Id = id,
             IdOriginal = request.Id,
             NumeroCompra = request.NumeroCompra.Trim(),
-            ProveedorId = proveedorId,
+            ProveedorId = proveedorId.Value,
             FechaUtc = ParseFechaUtc(request.Fecha),
             Detalles = request.Detalles.Select(detalle => new DetalleCompra
             {
-                ProductoId = StringToGuid(detalle.ProductoId),
+                ProductoId = productoIds[detalle.ProductoId],
                 Cantidad = detalle.Cantidad,
                 CostoUnitario = detalle.CostoUnitario
             }).ToList()
@@ -72,9 +82,19 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
             return ServiceResult<CompraResponse>.Fail("Compra no encontrada.");
         }
 
-        var proveedorId = StringToGuid(request.ProveedorId);
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
+        {
+            return ServiceResult<CompraResponse>.Fail("El proveedor no existe.");
+        }
 
-        var validation = await ValidateAsync(id, request, proveedorId, cancellationToken);
+        var productoIds = await ResolveDetalleProductoIdsAsync(request.Detalles, cancellationToken);
+        if (productoIds is null)
+        {
+            return ServiceResult<CompraResponse>.Fail("Uno o mas productos no existen.");
+        }
+
+        var validation = await ValidateAsync(id, request, cancellationToken);
         if (validation is not null)
         {
             return ServiceResult<CompraResponse>.Fail(validation);
@@ -89,12 +109,12 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
 
         dbContext.DetallesCompra.RemoveRange(compra.Detalles);
         compra.NumeroCompra = request.NumeroCompra.Trim();
-        compra.ProveedorId = proveedorId;
+        compra.ProveedorId = proveedorId.Value;
         compra.FechaUtc = ParseFechaUtc(request.Fecha);
         compra.Detalles = request.Detalles.Select(detalle => new DetalleCompra
         {
             CompraId = compra.Id,
-            ProductoId = StringToGuid(detalle.ProductoId),
+            ProductoId = productoIds[detalle.ProductoId],
             Cantidad = detalle.Cantidad,
             CostoUnitario = detalle.CostoUnitario
         }).ToList();
@@ -139,16 +159,11 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
             .ThenInclude(detalle => detalle.Producto);
     }
 
-    private async Task<string?> ValidateAsync(Guid id, CrearCompraRequest request, Guid proveedorId, CancellationToken cancellationToken)
+    private async Task<string?> ValidateAsync(Guid id, CrearCompraRequest request, CancellationToken cancellationToken)
     {
         if (!request.Detalles.Any())
         {
             return "La compra debe incluir al menos un detalle.";
-        }
-
-        if (!await dbContext.Proveedores.AnyAsync(proveedor => proveedor.Id == proveedorId, cancellationToken))
-        {
-            return "El proveedor no existe.";
         }
 
         if (await dbContext.Compras.AnyAsync(compra => compra.Id != id && compra.NumeroCompra == request.NumeroCompra, cancellationToken))
@@ -156,9 +171,45 @@ public sealed class CompraService(SuperBodegaDbContext dbContext) : ICompraServi
             return "Ya existe una compra con ese numero.";
         }
 
-        var productIds = request.Detalles.Select(detalle => StringToGuid(detalle.ProductoId)).Distinct().ToArray();
-        var existingProducts = await dbContext.Productos.CountAsync(producto => productIds.Contains(producto.Id), cancellationToken);
-        return existingProducts == productIds.Length ? null : "Uno o mas productos no existen.";
+        return null;
+    }
+
+    private async Task<Guid?> ResolveProveedorIdAsync(string proveedorId, CancellationToken cancellationToken)
+    {
+        var id = proveedorId.Trim();
+        var parsed = Guid.TryParse(id, out var guid) ? guid : StringToGuid(id);
+
+        var proveedor = await dbContext.Proveedores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == parsed || item.IdOriginal == id, cancellationToken);
+
+        return proveedor?.Id;
+    }
+
+    private async Task<Dictionary<string, Guid>?> ResolveDetalleProductoIdsAsync(
+        IEnumerable<CrearDetalleCompraRequest> detalles,
+        CancellationToken cancellationToken)
+    {
+        var productoIds = new Dictionary<string, Guid>(StringComparer.Ordinal);
+
+        foreach (var detalle in detalles)
+        {
+            var id = detalle.ProductoId.Trim();
+            var parsed = Guid.TryParse(id, out var guid) ? guid : StringToGuid(id);
+
+            var producto = await dbContext.Productos
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == parsed || item.IdOriginal == id, cancellationToken);
+
+            if (producto is null)
+            {
+                return null;
+            }
+
+            productoIds[detalle.ProductoId] = producto.Id;
+        }
+
+        return productoIds;
     }
 
     private async Task AumentarStockPorCompraAsync(IEnumerable<DetalleCompra> detalles, CancellationToken cancellationToken)

@@ -682,44 +682,52 @@ document.getElementById('btn-generar-reporte').addEventListener('click', async (
 function mostrarReporte(reporte, tipo) {
     const container = document.getElementById('resultado-reporte');
 
-    if (!Array.isArray(reporte)) {
+    if (!reporte || typeof reporte !== 'object') {
         container.innerHTML = '<p>No se encontraron resultados para el reporte.</p>';
         return;
     }
 
     if (tipo === 'periodo') {
         container.innerHTML = `
-            <div class="item-row item-row-header">
-                <div>ID</div>
-                <div>Fecha</div>
-                <div>Total</div>
-                <div>Estado</div>
+            <div class="item-card">
+                <strong>Reporte por perÃ­odo</strong>
+                <p>Desde: ${formatearFecha(reporte.Desde || reporte.desde)}</p>
+                <p>Hasta: ${formatearFecha(reporte.Hasta || reporte.hasta)}</p>
+                <p>Total ventas: ${reporte.TotalVentas ?? reporte.totalVentas ?? 0}</p>
+                <p>Monto ventas: ${formatearQuetzales(reporte.MontoVentas ?? reporte.montoVentas)}</p>
+                <p>Total compras: ${reporte.TotalCompras ?? reporte.totalCompras ?? 0}</p>
+                <p>Monto compras: ${formatearQuetzales(reporte.MontoCompras ?? reporte.montoCompras)}</p>
             </div>
-            ${reporte.map(r => `
-                <div class="item-row">
-                    <div>${r.id}</div>
-                    <div>${new Date(r.fecha).toLocaleDateString()}</div>
-                    <div>${formatearQuetzales(r.total)}</div>
-                    <div>${r.estado || '-'}</div>
-                </div>
-            `).join('')}
+        `;
+    } else if (tipo === 'producto') {
+        container.innerHTML = `
+            <div class="item-card">
+                <strong>${reporte.Producto || reporte.producto || 'Producto'}</strong>
+                <p>ID: ${reporte.ProductoId || reporte.productoId}</p>
+                <p>Unidades vendidas: ${reporte.UnidadesVendidas ?? reporte.unidadesVendidas ?? 0}</p>
+                <p>Monto vendido: ${formatearQuetzales(reporte.MontoVendido ?? reporte.montoVendido)}</p>
+                <p>Unidades compradas: ${reporte.UnidadesCompradas ?? reporte.unidadesCompradas ?? 0}</p>
+                <p>Monto comprado: ${formatearQuetzales(reporte.MontoComprado ?? reporte.montoComprado)}</p>
+            </div>
+        `;
+    } else if (tipo === 'cliente') {
+        container.innerHTML = `
+            <div class="item-card">
+                <strong>${reporte.Cliente || reporte.cliente || 'Cliente'}</strong>
+                <p>ID: ${reporte.ClienteId || reporte.clienteId}</p>
+                <p>Total ventas: ${reporte.TotalVentas ?? reporte.totalVentas ?? 0}</p>
+                <p>Monto comprado: ${formatearQuetzales(reporte.MontoComprado ?? reporte.montoComprado)}</p>
+            </div>
         `;
     } else {
         container.innerHTML = `
-            <div class="item-row item-row-header">
-                <div>ID</div>
-                <div>Nombre</div>
-                <div>Cantidad</div>
-                <div>Total</div>
+            <div class="item-card">
+                <strong>${reporte.Proveedor || reporte.proveedor || 'Proveedor'}</strong>
+                <p>ID: ${reporte.ProveedorId || reporte.proveedorId}</p>
+                <p>Total compras: ${reporte.TotalCompras ?? reporte.totalCompras ?? 0}</p>
+                <p>Monto comprado: ${formatearQuetzales(reporte.MontoComprado ?? reporte.montoComprado)}</p>
+                <p>Productos activos: ${reporte.ProductosActivos ?? reporte.productosActivos ?? 0}</p>
             </div>
-            ${reporte.map(r => `
-                <div class="item-row">
-                    <div>${r.id}</div>
-                    <div>${r.nombre || '-'}</div>
-                    <div>${r.cantidad || 0}</div>
-                    <div>${formatearQuetzales(r.total)}</div>
-                </div>
-            `).join('')}
         `;
     }
 }

@@ -4,9 +4,36 @@ function formatearQuetzales(valor) {
     return 'Q' + Number(valor || 0).toFixed(2);
 }
 
+function toClienteLocal(cliente) {
+    return {
+        id: cliente.Id || cliente.id,
+        idOriginal: cliente.IdOriginal || cliente.idOriginal || '',
+        nombre: cliente.Nombre || cliente.nombre || '',
+        apellido: cliente.Apellido || cliente.apellido || '',
+        email: cliente.Email || cliente.email || '',
+        telefono: cliente.Telefono || cliente.telefono || '',
+        direccion: cliente.DireccionEnvio || cliente.direccionEnvio || cliente.Direccion || cliente.direccion || ''
+    };
+}
+
+async function asegurarClienteCarrito() {
+    if (!carrito.clienteId || carrito.cliente) {
+        return;
+    }
+
+    try {
+        const cliente = await obtenerCliente(carrito.clienteId);
+        carrito.cliente = toClienteLocal(cliente);
+        guardarCarritoLocal(carrito);
+    } catch (error) {
+        console.error('Error al cargar cliente del carrito:', error);
+    }
+}
+
 async function cargarCarrito() {
     try {
         carrito = obtenerCarritoLocal();
+        await asegurarClienteCarrito();
 
         if (carrito.id) {
             const carritoDetalles = await obtenerCarritoDetalles(carrito.id);
@@ -21,6 +48,8 @@ async function cargarCarrito() {
 }
 
 function renderizarCarrito() {
+    renderizarClienteCarrito();
+
     const container = document.getElementById('carrito-items');
     container.innerHTML = '';
 
@@ -57,6 +86,31 @@ function renderizarCarrito() {
     });
 
     document.getElementById('total').textContent = total.toFixed(2);
+}
+
+function renderizarClienteCarrito() {
+    const container = document.getElementById('cliente-carrito');
+    const cliente = carrito.cliente;
+
+    if (!carrito.clienteId) {
+        container.innerHTML = `
+            <strong>Cliente seleccionado</strong>
+            <p>No hay cliente seleccionado para este carrito.</p>
+            <a href="index.html" class="btn btn-secondary">Seleccionar cliente</a>
+        `;
+        return;
+    }
+
+    const nombreCompleto = cliente
+        ? `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim()
+        : '';
+
+    container.innerHTML = `
+        <strong>Cliente seleccionado</strong>
+        <p>${nombreCompleto || 'Cliente'}${cliente?.idOriginal ? ` - ID: ${cliente.idOriginal}` : ''}</p>
+        <p>${cliente?.email || 'Email no disponible'}${cliente?.telefono ? ` - ${cliente.telefono}` : ''}</p>
+        <a href="index.html" class="btn btn-secondary">Cambiar cliente</a>
+    `;
 }
 
 async function sincronizarCarrito(response) {
@@ -105,7 +159,7 @@ async function procesarPedido() {
         const response = await crearPedidoSincrono(carrito.id);
         alert(`Pedido procesado exitosamente. Venta ID: ${response.ventaId || response.id || 'N/A'}`);
 
-        carrito = { id: null, clienteId: null, items: [] };
+        carrito = { id: null, clienteId: null, cliente: null, items: [] };
         guardarCarritoLocal(carrito);
         renderizarCarrito();
     } catch (error) {

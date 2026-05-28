@@ -30,12 +30,18 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
 
     public async Task<ServiceResult<ClienteResponse>> CreateAsync(CrearClienteRequest request, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.Id) || request.Id.Length < 4)
-        {
-            return ServiceResult<ClienteResponse>.Fail("El ID es obligatorio y debe tener al menos 4 caracteres.");
-        }
+        var idOriginal = string.IsNullOrWhiteSpace(request.Id)
+            ? await GenerateNextIdOriginalAsync(cancellationToken)
+            : request.Id.Trim();
+        var id = StringToGuid(idOriginal);
 
-        var id = StringToGuid(request.Id);
+        var idExists = await dbContext.Clientes.AnyAsync(
+            cliente => cliente.Id == id || cliente.IdOriginal == idOriginal,
+            cancellationToken);
+        if (idExists)
+        {
+            return ServiceResult<ClienteResponse>.Fail("Ya existe un cliente con ese ID.");
+        }
 
         var emailExists = await dbContext.Clientes.AnyAsync(cliente => cliente.Email == request.Email, cancellationToken);
         if (emailExists)
@@ -46,7 +52,7 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
         var cliente = new Cliente
         {
             Id = id,
-            IdOriginal = request.Id,
+            IdOriginal = idOriginal,
             Nombre = request.Nombre.Trim(),
             Apellido = request.Apellido.Trim(),
             Email = request.Email.Trim(),
@@ -78,7 +84,9 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
         cliente.Email = request.Email.Trim();
         cliente.Telefono = request.Telefono?.Trim();
         cliente.DireccionEnvio = ResolverDireccion(request);
-        cliente.IdOriginal = request.Id.Trim();
+        cliente.IdOriginal = string.IsNullOrWhiteSpace(request.Id)
+            ? cliente.IdOriginal
+            : request.Id.Trim();
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ServiceResult<ClienteResponse>.Ok(ToResponse(cliente));
@@ -118,6 +126,28 @@ public sealed class ClienteService(SuperBodegaDbContext dbContext) : IClienteSer
     {
         var direccion = request.DireccionEnvio ?? request.Direccion;
         return string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim();
+    }
+
+    private async Task<string> GenerateNextIdOriginalAsync(CancellationToken cancellationToken)
+    {
+        var idOriginales = await dbContext.Clientes
+            .AsNoTracking()
+            .Select(cliente => cliente.IdOriginal)
+            .ToArrayAsync(cancellationToken);
+
+        var next = idOriginales
+            .Select(id => int.TryParse(id, out var number) ? number : 0)
+            .DefaultIfEmpty(0)
+            .Max() + 1;
+
+        while (await dbContext.Clientes.AnyAsync(
+            cliente => cliente.IdOriginal == next.ToString() || cliente.Id == StringToGuid(next.ToString()),
+            cancellationToken))
+        {
+            next++;
+        }
+
+        return next.ToString();
     }
 
     private static Guid StringToGuid(string input)

@@ -2,6 +2,7 @@
 using SuperBodega.Ecommerce.Api.Consumers;
 using SuperBodega.Ecommerce.Api.Messaging;
 using SuperBodega.Ecommerce.Api.Queues;
+using SuperBodega.Ecommerce.Api.Services.Email;
 using SuperBodega.Ecommerce.Api.Services.Carrito;
 using SuperBodega.Ecommerce.Api.Services.Catalogo;
 using SuperBodega.Ecommerce.Api.Services.Pedidos;
@@ -19,6 +20,7 @@ builder.Services.AddSuperBodegaInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<ICarritoService, CarritoService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddHttpClient<IEmailService, MailjetEmailService>();
 builder.Services.AddSingleton<KafkaProducer>();
 builder.Services.AddHostedService<KafkaConsumerService>();
 

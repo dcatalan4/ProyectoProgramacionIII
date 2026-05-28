@@ -35,12 +35,10 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
     public async Task<ServiceResult<ProductoResponse>> CreateAsync(CrearProductoRequest request, CancellationToken cancellationToken)
     {
         var productoId = StringToGuid(request.Id);
-        var proveedorId = StringToGuid(request.ProveedorId);
-
-        var validation = await ValidateProveedorAsync(proveedorId, cancellationToken);
-        if (validation is not null)
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
         {
-            return ServiceResult<ProductoResponse>.Fail(validation);
+            return ServiceResult<ProductoResponse>.Fail("El proveedor no existe.");
         }
 
         var producto = new Producto
@@ -54,7 +52,7 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
             PrecioCompra = request.PrecioCompra,
             Stock = request.Stock,
             CategoriaId = null,
-            ProveedorId = proveedorId
+            ProveedorId = proveedorId.Value
         };
 
         dbContext.Productos.Add(producto);
@@ -71,12 +69,10 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
             return ServiceResult<ProductoResponse>.Fail("Producto no encontrado.");
         }
 
-        var proveedorId = StringToGuid(request.ProveedorId);
-
-        var validation = await ValidateProveedorAsync(proveedorId, cancellationToken);
-        if (validation is not null)
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
         {
-            return ServiceResult<ProductoResponse>.Fail(validation);
+            return ServiceResult<ProductoResponse>.Fail("El proveedor no existe.");
         }
 
         producto.Nombre = request.Nombre.Trim();
@@ -86,7 +82,7 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
         producto.PrecioCompra = request.PrecioCompra;
         producto.Stock = request.Stock;
         producto.EstaActivo = request.EstaActivo;
-        producto.ProveedorId = proveedorId;
+        producto.ProveedorId = proveedorId.Value;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ServiceResult<ProductoResponse>.Ok((await GetByIdAsync(producto.Id, cancellationToken))!);
@@ -133,14 +129,23 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
         return actualizados;
     }
 
-    private async Task<string?> ValidateProveedorAsync(Guid proveedorId, CancellationToken cancellationToken)
+    private async Task<Guid?> ResolveProveedorIdAsync(string proveedorId, CancellationToken cancellationToken)
     {
-        if (!await dbContext.Proveedores.AnyAsync(proveedor => proveedor.Id == proveedorId, cancellationToken))
+        var id = proveedorId.Trim();
+        var parsed = Guid.TryParse(id, out var guid) ? guid : StringToGuid(id);
+
+        var proveedor = await dbContext.Proveedores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == parsed || item.IdOriginal == id, cancellationToken);
+
+        if (proveedor is null && !Guid.TryParse(id, out _))
         {
-            return "El proveedor no existe.";
+            proveedor = await dbContext.Proveedores
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == StringToGuid(id), cancellationToken);
         }
 
-        return null;
+        return proveedor?.Id;
     }
 
     private static ProductoResponse ToResponse(Producto producto)
@@ -154,7 +159,9 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
             producto.PrecioCompra,
             producto.Stock,
             producto.EstaActivo,
-            producto.ProveedorId.ToString(),
+            !string.IsNullOrWhiteSpace(producto.Proveedor?.IdOriginal)
+                ? producto.Proveedor!.IdOriginal
+                : producto.ProveedorId.ToString(),
             producto.Proveedor?.Nombre);
     }
 

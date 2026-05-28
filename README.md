@@ -37,6 +37,23 @@ dotnet ef
 
 # Levantar aplicacion con Docker
 
+Crear un archivo `.env` local a partir del ejemplo:
+
+```bash
+cp .env.example .env
+```
+
+Configurar las variables de Mailjet en `.env`:
+
+```text
+MAILJET_API_KEY=tu-api-key-publica
+MAILJET_SECRET_KEY=tu-secret-key
+MAILJET_FROM_EMAIL=correo-remitente-verificado
+MAILJET_FROM_NAME=SuperBodega
+```
+
+Importante: `.env` no se sube al repo. Cada desarrollador debe usar sus credenciales o pedirlas por un canal seguro.
+
 Desde la raíz del proyecto ejecutar:
 
 ```bash
@@ -50,6 +67,8 @@ Esto levantará:
 - Zookeeper
 - Admin API
 - Ecommerce API
+
+La API Ecommerce usa Mailjet para enviar el detalle del pedido al cliente cuando se procesa el carrito. Si Mailjet no esta configurado, el pedido se procesa igual, pero la notificacion queda marcada como no enviada.
 
 Verificar contenedores:
 

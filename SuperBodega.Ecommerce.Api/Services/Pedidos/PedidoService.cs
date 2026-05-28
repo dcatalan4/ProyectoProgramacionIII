@@ -6,6 +6,8 @@ using SuperBodega.Ecommerce.Api.Dtos.Pedidos;
 
 using SuperBodega.Ecommerce.Api.Messaging;
 
+using SuperBodega.Ecommerce.Api.Services.Email;
+
 using SuperBodega.Infrastructure.Data;
 
 
@@ -14,7 +16,10 @@ namespace SuperBodega.Ecommerce.Api.Services.Pedidos;
 
 
 
-public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer kafkaProducer) : IPedidoService
+public sealed class PedidoService(
+    SuperBodegaDbContext dbContext,
+    KafkaProducer kafkaProducer,
+    IEmailService emailService) : IPedidoService
 
 {
 
@@ -258,6 +263,8 @@ public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer k
 
         Console.WriteLine("Transacción completada");
 
+        await EnviarCorreoPedidoAsync(venta, carrito, notificacion, cancellationToken);
+
 
 
         return ServiceResult<PedidoResponse>
@@ -354,12 +361,48 @@ public sealed class PedidoService(SuperBodegaDbContext dbContext,KafkaProducer k
 
             Mensaje = mensaje,
 
-            FueEnviada = true,
+            FueEnviada = false,
 
-            EnviadaUtc = DateTime.UtcNow
+            EnviadaUtc = null
 
         };
 
+    }
+
+
+
+    private async Task EnviarCorreoPedidoAsync(
+        Venta venta,
+        SuperBodega.Domain.Entities.Carrito carrito,
+        NotificacionPedido notificacion,
+        CancellationToken cancellationToken)
+    {
+        if (carrito.Cliente is null)
+        {
+            notificacion.FueEnviada = false;
+            notificacion.Mensaje = $"{notificacion.Mensaje} Correo no enviado: cliente no disponible.";
+            await dbContext.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        var email = new PedidoEmailMessage(
+            venta.NumeroVenta,
+            venta.FechaUtc,
+            carrito.Cliente,
+            venta.Total,
+            carrito.Detalles.Select(detalle => new PedidoEmailDetalle(
+                detalle.Producto?.Nombre ?? detalle.ProductoId.ToString(),
+                detalle.Cantidad,
+                detalle.PrecioUnitario,
+                detalle.Subtotal)).ToArray());
+
+        var result = await emailService.SendPedidoConfirmationAsync(email, cancellationToken);
+
+        notificacion.FueEnviada = result.Success;
+        notificacion.EnviadaUtc = result.Success ? DateTime.UtcNow : null;
+        notificacion.Mensaje = $"{notificacion.Mensaje} {result.Message}";
+
+        await dbContext.SaveChangesAsync(cancellationToken);
     }
 
 

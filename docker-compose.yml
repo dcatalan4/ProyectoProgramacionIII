@@ -79,6 +79,10 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__SuperBodegaDb: Host=postgres;Port=5432;Database=superbodega;Username=superbodega;Password=superbodega
       Kafka__BootstrapServers: kafka:29092
+      Mailjet__ApiKey: ${MAILJET_API_KEY:-}
+      Mailjet__SecretKey: ${MAILJET_SECRET_KEY:-}
+      Mailjet__FromEmail: ${MAILJET_FROM_EMAIL:-}
+      Mailjet__FromName: ${MAILJET_FROM_NAME:-SuperBodega}
     ports:
       - "5180:8080"
 

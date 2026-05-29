@@ -161,7 +161,10 @@ async function agregarAlCarrito(productoId) {
         alert('Producto agregado al carrito');
     } catch (error) {
         console.error('Error al agregar al carrito:', error);
-        alert('Error al agregar al carrito');
+        const mensaje = error.message?.includes('Error HTTP')
+            ? error.message.replace(/^Error HTTP \d+: /, '')
+            : 'Error al agregar al carrito';
+        alert(mensaje);
     }
 }
 

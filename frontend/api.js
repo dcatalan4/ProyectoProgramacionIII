@@ -80,6 +80,16 @@ async function crearPedidoAsincrono(carritoId) {
     });
 }
 
+async function obtenerEstadoSolicitud(solicitudId) {
+    return fetchAPI(`${API_ECOMMERCE}/pedidos/solicitud/${solicitudId}`);
+}
+
+async function finalizarSolicitudManualmenteApi(solicitudId) {
+    return fetchAPI(`${API_ECOMMERCE}/pedidos/solicitud/${solicitudId}/finalizar`, {
+        method: 'POST'
+    });
+}
+
 // Admin - Productos
 async function obtenerProductos(incluirInactivos = true) {
     return fetchAPI(`${API_ADMIN}/productos?incluirInactivos=${incluirInactivos}`);

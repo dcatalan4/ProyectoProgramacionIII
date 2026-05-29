@@ -40,6 +40,9 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseCors(policy => policy
     .AllowAnyOrigin()
     .AllowAnyMethod()

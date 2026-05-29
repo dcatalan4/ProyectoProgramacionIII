@@ -16,6 +16,7 @@ public sealed class SuperBodegaDbContext(DbContextOptions<SuperBodegaDbContext> 
     public DbSet<Carrito> Carritos => Set<Carrito>();
     public DbSet<CarritoDetalle> CarritoDetalles => Set<CarritoDetalle>();
     public DbSet<NotificacionPedido> NotificacionesPedido => Set<NotificacionPedido>();
+    public DbSet<SolicitudPedido> SolicitudPedidos => Set<SolicitudPedido>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

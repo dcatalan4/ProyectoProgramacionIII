@@ -1,4 +1,5 @@
 let carrito = { id: null, items: [] };
+let solicitudActual = null;
 
 function formatearQuetzales(valor) {
     return 'Q' + Number(valor || 0).toFixed(2);
@@ -156,12 +157,24 @@ async function procesarPedido() {
             return;
         }
 
-        const response = await crearPedidoSincrono(carrito.id);
-        alert(`Pedido procesado exitosamente. Venta ID: ${response.ventaId || response.id || 'N/A'}`);
-
-        carrito = { id: null, clienteId: null, cliente: null, items: [] };
-        guardarCarritoLocal(carrito);
-        renderizarCarrito();
+        const modo = document.querySelector('input[name="modo-pedido"]:checked').value;
+        let response;
+        
+        if (modo === 'sincrono') {
+            response = await crearPedidoSincrono(carrito.id);
+            alert(`Pedido procesado exitosamente (Síncrono). Venta ID: ${response.ventaId || response.id || 'N/A'}`);
+            carrito = { id: null, clienteId: null, cliente: null, items: [] };
+            guardarCarritoLocal(carrito);
+            renderizarCarrito();
+        } else {
+            response = await crearPedidoAsincrono(carrito.id);
+            solicitudActual = response.solicitudId || response.id;
+            mostrarEstadoSolicitud(solicitudActual);
+            alert(`Pedido encolado exitosamente (Asíncrono). Solicitud ID: ${solicitudActual}`);
+            carrito = { id: null, clienteId: null, cliente: null, items: [] };
+            guardarCarritoLocal(carrito);
+            renderizarCarrito();
+        }
     } catch (error) {
         console.error('Error al procesar pedido:', error);
         const mensaje = error.message?.includes('Error HTTP')
@@ -171,6 +184,67 @@ async function procesarPedido() {
     }
 }
 
+function mostrarEstadoSolicitud(solicitudId) {
+    document.getElementById('estado-solicitud').style.display = 'block';
+    document.getElementById('solicitud-id').textContent = solicitudId;
+    document.getElementById('solicitud-estado').textContent = 'Encolado';
+    document.getElementById('solicitud-venta').style.display = 'none';
+    document.getElementById('solicitud-error').style.display = 'none';
+    document.getElementById('btn-finalizar-solicitud').style.display = 'inline-block';
+}
+
+async function consultarEstadoSolicitud() {
+    if (!solicitudActual) return;
+    
+    try {
+        const estado = await obtenerEstadoSolicitud(solicitudActual);
+        document.getElementById('solicitud-estado').textContent = estado.estado;
+        
+        if (estado.estado === 'Completado') {
+            document.getElementById('solicitud-venta').style.display = 'block';
+            document.getElementById('venta-id').textContent = estado.ventaId;
+            document.getElementById('btn-finalizar-solicitud').style.display = 'none';
+            alert('Pedido completado exitosamente');
+            carrito = { id: null, clienteId: null, cliente: null, items: [] };
+            guardarCarritoLocal(carrito);
+            renderizarCarrito();
+            document.getElementById('estado-solicitud').style.display = 'none';
+        } else if (estado.estado === 'Fallido') {
+            document.getElementById('solicitud-error').style.display = 'block';
+            document.getElementById('error-mensaje').textContent = estado.mensajeError;
+            document.getElementById('btn-finalizar-solicitud').style.display = 'inline-block';
+        }
+    } catch (error) {
+        console.error('Error al consultar estado:', error);
+        alert('Error al consultar estado: ' + error.message);
+    }
+}
+
+async function finalizarSolicitudManualmente() {
+    if (!solicitudActual) return;
+    
+    try {
+        const response = await finalizarSolicitudManualmenteApi(solicitudActual);
+        alert(`Pedido finalizado manualmente. Venta ID: ${response.ventaId || response.id || 'N/A'}`);
+        carrito = { id: null, clienteId: null, cliente: null, items: [] };
+        guardarCarritoLocal(carrito);
+        renderizarCarrito();
+        document.getElementById('estado-solicitud').style.display = 'none';
+    } catch (error) {
+        console.error('Error al finalizar solicitud:', error);
+        const mensaje = error.message?.includes('Error HTTP')
+            ? error.message.replace(/^Error HTTP \d+: /, '')
+            : 'Error al finalizar solicitud';
+        alert(mensaje);
+        
+        // Si la solicitud ya fue completada, ocultar la sección de estado
+        if (mensaje.includes('ya fue completada')) {
+            document.getElementById('estado-solicitud').style.display = 'none';
+        }
+    }
+}
+
 document.getElementById('btn-procesar-pedido').addEventListener('click', procesarPedido);
+document.getElementById('btn-finalizar-solicitud').addEventListener('click', finalizarSolicitudManualmente);
 
 document.addEventListener('DOMContentLoaded', cargarCarrito);

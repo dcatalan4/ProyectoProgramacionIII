@@ -22,6 +22,7 @@ ARG PROJECT
 ENV PROJECT=${PROJECT}
 WORKDIR /app
 COPY --from=build /app/publish .
+COPY frontend wwwroot
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 ENTRYPOINT ["sh", "-c", "dotnet ${PROJECT}.dll"]

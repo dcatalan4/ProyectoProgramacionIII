@@ -263,6 +263,48 @@ h2 {
     font-size: 24px;
 }
 
+.modo-pedido {
+    margin: 15px 0;
+    display: flex;
+    gap: 20px;
+    justify-content: flex-end;
+}
+
+.modo-pedido label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #e8f4f8;
+}
+
+.modo-pedido input[type="radio"] {
+    cursor: pointer;
+}
+
+.estado-solicitud {
+    background-color: #112240;
+    border: 1px solid #233554;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.estado-solicitud h3 {
+    color: #64ffda;
+    margin-bottom: 15px;
+}
+
+.estado-solicitud p {
+    color: #e8f4f8;
+    margin-bottom: 10px;
+}
+
+.estado-solicitud span {
+    color: #64ffda;
+    font-weight: bold;
+}
+
 .admin-tabs {
     display: flex;
     gap: 10px;

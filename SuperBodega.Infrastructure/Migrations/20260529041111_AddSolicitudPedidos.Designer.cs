@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SuperBodega.Infrastructure.Data;
@@ -11,9 +12,11 @@ using SuperBodega.Infrastructure.Data;
 namespace SuperBodega.Infrastructure.Migrations
 {
     [DbContext(typeof(SuperBodegaDbContext))]
-    partial class SuperBodegaDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260529041111_AddSolicitudPedidos")]
+    partial class AddSolicitudPedidos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

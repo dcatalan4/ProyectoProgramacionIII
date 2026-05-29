@@ -51,11 +51,17 @@ public sealed class PedidoService(
 
         var solicitudId = Guid.NewGuid();
 
+        var solicitud = new SolicitudPedido
+        {
+            Id = solicitudId,
+            CarritoId = request.CarritoId,
+            Estado = EstadoSolicitud.Encolado
+        };
 
+        dbContext.SolicitudPedidos.Add(solicitud);
+        await dbContext.SaveChangesAsync(cancellationToken);
 
         await kafkaProducer.EnviarPedidoAsync(request.CarritoId);
-
-
 
         return new PedidoEncoladoResponse(
 
@@ -193,7 +199,7 @@ public sealed class PedidoService(
 
             CarritoId = carrito.Id,
 
-            NumeroVenta = $"P-{DateTime.UtcNow:yyyyMMddHHmmssfff}",
+            NumeroVenta = $"P-{DateTime.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid().ToString()[..6]}",
 
             Estado = EstadoVenta.Recibida
 

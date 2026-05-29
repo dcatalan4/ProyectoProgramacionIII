@@ -183,7 +183,7 @@ async function editarProducto(id) {
         document.getElementById('producto-precio-venta').value = producto.PrecioVenta || producto.precioVenta;
         document.getElementById('producto-precio-compra').value = producto.PrecioCompra || producto.precioCompra;
         document.getElementById('producto-stock').value = producto.Stock || producto.stock;
-        document.getElementById('producto-proveedor-id').value = producto.ProveedorId || producto.proveedorId;
+        document.getElementById('producto-proveedor-id').value = producto.ProveedorId || producto.proveedorId || '';
         modalProducto.style.display = 'block';
     } catch (error) {
         alert('Error al cargar producto: ' + error.message);
@@ -197,7 +197,11 @@ async function eliminarProducto(id) {
             alert('Producto eliminado');
             cargarProductos();
         } catch (error) {
-            alert('Error al eliminar producto');
+            console.error('Error al eliminar producto:', error);
+            const mensaje = error.message?.includes('Error HTTP')
+                ? error.message.replace(/^Error HTTP \d+: /, '')
+                : 'Error al eliminar producto';
+            alert(mensaje);
         }
     }
 }
@@ -298,7 +302,11 @@ async function eliminarProveedor(id) {
             alert('Proveedor eliminado');
             cargarProveedores();
         } catch (error) {
-            alert('Error al eliminar proveedor');
+            console.error('Error al eliminar proveedor:', error);
+            const mensaje = error.message?.includes('Error HTTP')
+                ? error.message.replace(/^Error HTTP \d+: /, '')
+                : 'Error al eliminar proveedor';
+            alert(mensaje);
         }
     }
 }
@@ -350,7 +358,7 @@ document.getElementById('form-cliente').addEventListener('submit', async (e) => 
     e.preventDefault();
     
     const cliente = {
-        Id: document.getElementById('cliente-id-input').value,
+        Id: document.getElementById('cliente-id-input').value || '',
         Nombre: document.getElementById('cliente-nombre').value,
         Apellido: document.getElementById('cliente-apellido').value,
         DireccionEnvio: document.getElementById('cliente-direccion').value || '',
@@ -402,7 +410,11 @@ async function eliminarCliente(id) {
             alert('Cliente eliminado');
             cargarClientes();
         } catch (error) {
-            alert('Error al eliminar cliente');
+            console.error('Error al eliminar cliente:', error);
+            const mensaje = error.message?.includes('Error HTTP')
+                ? error.message.replace(/^Error HTTP \d+: /, '')
+                : 'Error al eliminar cliente';
+            alert(mensaje);
         }
     }
 }
@@ -496,7 +508,11 @@ async function eliminarCompra(id) {
             alert('Compra eliminada');
             cargarCompras();
         } catch (error) {
-            alert('Error al eliminar compra');
+            console.error('Error al eliminar compra:', error);
+            const mensaje = error.message?.includes('Error HTTP')
+                ? error.message.replace(/^Error HTTP \d+: /, '')
+                : 'Error al eliminar compra';
+            alert(mensaje);
         }
     }
 }
@@ -618,7 +634,11 @@ async function eliminarVenta(id) {
             alert('Venta eliminada');
             cargarVentas();
         } catch (error) {
-            alert('Error al eliminar venta');
+            console.error('Error al eliminar venta:', error);
+            const mensaje = error.message?.includes('Error HTTP')
+                ? error.message.replace(/^Error HTTP \d+: /, '')
+                : 'Error al eliminar venta';
+            alert(mensaje);
         }
     }
 }

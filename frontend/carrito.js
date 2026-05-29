@@ -171,9 +171,8 @@ async function procesarPedido() {
             solicitudActual = response.solicitudId || response.id;
             mostrarEstadoSolicitud(solicitudActual);
             alert(`Pedido encolado exitosamente (Asíncrono). Solicitud ID: ${solicitudActual}`);
-            carrito = { id: null, clienteId: null, cliente: null, items: [] };
-            guardarCarritoLocal(carrito);
-            renderizarCarrito();
+            // No limpiar el carrito inmediatamente en modo asíncrono
+            // El carrito se limpia cuando el pedido se completa o se finaliza manualmente
         }
     } catch (error) {
         console.error('Error al procesar pedido:', error);
@@ -191,6 +190,47 @@ function mostrarEstadoSolicitud(solicitudId) {
     document.getElementById('solicitud-venta').style.display = 'none';
     document.getElementById('solicitud-error').style.display = 'none';
     document.getElementById('btn-finalizar-solicitud').style.display = 'inline-block';
+    
+    // Iniciar polling para verificar el estado automáticamente
+    iniciarPollingEstado(solicitudId);
+}
+
+let estadoPollingInterval = null;
+
+function iniciarPollingEstado(solicitudId) {
+    // Detener cualquier polling anterior
+    if (estadoPollingInterval) {
+        clearInterval(estadoPollingInterval);
+    }
+    
+    // Consultar el estado cada 2 segundos
+    estadoPollingInterval = setInterval(async () => {
+        try {
+            const estado = await obtenerEstadoSolicitud(solicitudId);
+            document.getElementById('solicitud-estado').textContent = estado.estado;
+            
+            if (estado.estado === 'Completado') {
+                document.getElementById('solicitud-venta').style.display = 'block';
+                document.getElementById('venta-id').textContent = estado.ventaId;
+                document.getElementById('btn-finalizar-solicitud').style.display = 'none';
+                alert('Pedido completado exitosamente');
+                carrito = { id: null, clienteId: null, cliente: null, items: [] };
+                guardarCarritoLocal(carrito);
+                renderizarCarrito();
+                document.getElementById('estado-solicitud').style.display = 'none';
+                clearInterval(estadoPollingInterval);
+                estadoPollingInterval = null;
+            } else if (estado.estado === 'Fallido') {
+                document.getElementById('solicitud-error').style.display = 'block';
+                document.getElementById('error-mensaje').textContent = estado.mensajeError;
+                document.getElementById('btn-finalizar-solicitud').style.display = 'inline-block';
+                clearInterval(estadoPollingInterval);
+                estadoPollingInterval = null;
+            }
+        } catch (error) {
+            console.error('Error al consultar estado:', error);
+        }
+    }, 2000);
 }
 
 async function consultarEstadoSolicitud() {

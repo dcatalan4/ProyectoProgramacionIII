@@ -198,6 +198,7 @@ function mostrarEstadoSolicitud(solicitudId) {
 let estadoPollingInterval = null;
 
 function iniciarPollingEstado(solicitudId) {
+    console.log('Iniciando polling para solicitud:', solicitudId);
     // Detener cualquier polling anterior
     if (estadoPollingInterval) {
         clearInterval(estadoPollingInterval);
@@ -206,10 +207,13 @@ function iniciarPollingEstado(solicitudId) {
     // Consultar el estado cada 2 segundos
     estadoPollingInterval = setInterval(async () => {
         try {
+            console.log('Consultando estado de solicitud:', solicitudId);
             const estado = await obtenerEstadoSolicitud(solicitudId);
+            console.log('Estado recibido:', estado);
             document.getElementById('solicitud-estado').textContent = estado.estado;
             
             if (estado.estado === 'Completado') {
+                console.log('Pedido completado, VentaId:', estado.ventaId);
                 document.getElementById('solicitud-venta').style.display = 'block';
                 document.getElementById('venta-id').textContent = estado.ventaId;
                 document.getElementById('btn-finalizar-solicitud').style.display = 'none';
@@ -221,6 +225,7 @@ function iniciarPollingEstado(solicitudId) {
                 clearInterval(estadoPollingInterval);
                 estadoPollingInterval = null;
             } else if (estado.estado === 'Fallido') {
+                console.log('Pedido fallido, Error:', estado.mensajeError);
                 document.getElementById('solicitud-error').style.display = 'block';
                 document.getElementById('error-mensaje').textContent = estado.mensajeError;
                 document.getElementById('btn-finalizar-solicitud').style.display = 'inline-block';
@@ -229,6 +234,7 @@ function iniciarPollingEstado(solicitudId) {
             }
         } catch (error) {
             console.error('Error al consultar estado:', error);
+            alert('Error al consultar estado: ' + error.message);
         }
     }, 2000);
 }

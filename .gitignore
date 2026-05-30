@@ -8,3 +8,4 @@ TestResults/
 *.nupkg
 *.log
 .env
+Pruebas de carga K6/clientes.txt

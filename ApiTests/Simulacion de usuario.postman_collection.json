@@ -1,10 +1,10 @@
 {
   "info": {
-    "_postman_id": "ac7fa07e-65ce-4b89-ab81-34622ae4c11a",
+    "_postman_id": "1720ccd5-c7b6-4b01-abff-f7bb824cc45f",
     "name": "Simulacion de usuario",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "54903872",
-    "_collection_link": "https://go.postman.co/collection/54903872-ac7fa07e-65ce-4b89-ab81-34622ae4c11a?source=collection_link"
+    "_exporter_id": "55229285",
+    "_collection_link": "https://go.postman.co/collection/55229285-1720ccd5-c7b6-4b01-abff-f7bb824cc45f?source=collection_link"
   },
   "item": [
     {
@@ -18,9 +18,9 @@
               "\r",
               "const response = pm.response.json();\r",
               "\r",
-              "pm.environment.set(\"clienteId\", response.id);\r",
+              "pm.collectionVariables.set(\"clienteId\", response.Id);\r",
               "\r",
-              "console.log(\"Cliente ID guardado: \" + response.id);"
+              "console.log(\"Cliente ID guardado: \" + response.Id);"
             ],
             "type": "text/javascript",
             "packages": {},
@@ -32,9 +32,11 @@
           "script": {
             "exec": [
               "const random = Math.floor(Math.random() * 10000);\r",
+              "const random2 = Math.floor(1000 + Math.random() * 9000);\r",
               "\r",
               "const email = `test${random}@example.com`;\r",
               "\r",
+              "pm.collectionVariables.set(\"idOriginal\", random2);\r",
               "pm.collectionVariables.set(\"emailGenerado\", email);"
             ],
             "type": "text/javascript",
@@ -48,7 +50,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"nombre\": \"Prueba\",\r\n  \"apellido\": \"Temporal\",\r\n  \"email\": \"{{emailGenerado}}\",\r\n  \"telefono\": \"11111111\",\r\n  \"direccionEnvio\": \"house\"\r\n}",
+          "raw": "{\r\n  \"Id\": \"{{idOriginal}}\",\r\n  \"nombre\": \"Prueba\",\r\n  \"apellido\": \"Temporal\",\r\n  \"email\": \"{{emailGenerado}}\",\r\n  \"telefono\": \"11111111\",\r\n  \"direccionEnvio\": \"house\",\r\n  \"Direccion\": \"house2\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -131,14 +133,21 @@
               "console.log(\"Tiempo de respuesta: \" + pm.response.responseTime + \" ms\");\r",
               "\r",
               "const response = pm.response.json();\r",
+              "pm.collectionVariables.set(\"CarritoId\", response.id);\r",
               "\r",
-              "pm.environment.set(\"id\", response.id);\r",
-              "\r",
-              "console.log(\"ID de carrito guardado: \" + response.id);"
+              "console.log(\"ID de carrito guardado: \" + response.id);\r",
+              ""
             ],
             "type": "text/javascript",
             "packages": {},
             "requests": {}
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "packages": {},
+            "type": "text/javascript"
           }
         }
       ],
@@ -147,7 +156,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"clienteId\": \"{{clienteId}}\"\r\n}",
+          "raw": "{\r\n        \"clienteId\": \"{{clienteId}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -193,7 +202,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"carritoId\": \"{{id}}\",\r\n  \"productoId\": \"55555555-5555-5555-5555-555555555555\",\r\n  \"cantidad\": 20\r\n}",
+          "raw": "{\r\n  \"carritoId\": \"{{CarritoId}}\",\r\n  \"productoId\": \"55555555-5555-5555-5555-555555555555\",\r\n  \"cantidad\": 20\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -240,7 +249,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"carritoId\": \"{{id}}\"\r\n}",
+          "raw": "{\r\n  \"carritoId\": \"{{CarritoId}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -283,7 +292,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\r\n  \"carritoId\": \"{{id}}\"\r\n}",
+          "raw": "{\r\n  \"carritoId\": \"{{CarritoId}}\"\r\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -334,6 +343,18 @@
   "variable": [
     {
       "key": "emailGenerado",
+      "value": ""
+    },
+    {
+      "key": "idOriginal",
+      "value": ""
+    },
+    {
+      "key": "clienteId",
+      "value": ""
+    },
+    {
+      "key": "CarritoId",
       "value": ""
     }
   ]

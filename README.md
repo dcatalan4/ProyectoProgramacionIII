@@ -69,6 +69,15 @@ Esto levantará:
 - Ecommerce API
 
 La API Ecommerce usa Mailjet para enviar el detalle del pedido al cliente cuando se procesa el carrito. Si Mailjet no esta configurado, el pedido se procesa igual, pero la notificacion queda marcada como no enviada.
+Swagger Documentacion:
+Admin API -> http://localhost:5088/swagger
+Ecommerce API -> http://localhost:5180/swagger
+
+permite:
+- Probar endpoints
+- Ver request/response
+- Validar Datos 
+
 
 Verificar contenedores:
 
@@ -335,3 +344,30 @@ POST /api/pedidos/asincrono
 - Kafka debe estar levantado antes de ejecutar Ecommerce API.
 - Los pedidos asincrónicos utilizan Kafka.
 - El stock se actualiza automáticamente al confirmar ventas.
+
+## Lista de cotejo
+
+ **Diego José Catalán Ayala**
+  Desarrollo de API principal (Domain, Admin API, flujo síncrono)
+  Despliegue del sistema en AWS
+
+ **Christopher Ricardo García Girón**
+  Implementación de Kafka
+  Apoyo en todas las áreas Varias del proyecto
+
+ **Saúl Silvestre Gonzales Gómez**
+  Desarrollo de interfaz en HTML
+  Apoyo en revisión de código
+
+ **José Miguel Alfaro Vázquez**
+  Pruebas de carga con K6
+  Apoyo en detección y corrección de errores
+
+ **José Miguel Castillo Pérez**
+  set de Pruebas de usuario con Postman
+  Apoyo en detección y corrección de errores
+
+ **Apoyo general**
+  Integración, pruebas y depuración colaborativa del sistema
+
+---

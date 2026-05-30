@@ -4,22 +4,20 @@ namespace SuperBodega.Admin.Api.Dtos.Productos;
 
 public sealed record ProductoResponse(
     Guid Id,
-    string Sku,
+    string IdOriginal,
     string Nombre,
     string? Descripcion,
     decimal PrecioVenta,
     decimal PrecioCompra,
     int Stock,
     bool EstaActivo,
-    Guid CategoriaId,
-    string? Categoria,
-    Guid ProveedorId,
+    string ProveedorId,
     string? Proveedor);
 
 public class CrearProductoRequest
 {
-    [Required, MaxLength(40)]
-    public string Sku { get; set; } = string.Empty;
+    [Required, MinLength(4)]
+    public string Id { get; set; } = string.Empty;
 
     [Required, MaxLength(160)]
     public string Nombre { get; set; } = string.Empty;
@@ -36,11 +34,8 @@ public class CrearProductoRequest
     [Range(0, int.MaxValue)]
     public int Stock { get; set; }
 
-    [Required]
-    public Guid CategoriaId { get; set; }
-
-    [Required]
-    public Guid ProveedorId { get; set; }
+    [Required, MinLength(4)]
+    public string ProveedorId { get; set; } = string.Empty;
 }
 
 public sealed class ActualizarProductoRequest : CrearProductoRequest

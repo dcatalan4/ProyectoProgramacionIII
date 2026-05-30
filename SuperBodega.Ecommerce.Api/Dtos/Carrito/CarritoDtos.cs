@@ -6,7 +6,7 @@ namespace SuperBodega.Ecommerce.Api.Dtos.Carrito;
 public sealed class CrearCarritoRequest
 {
     [Required]
-    public Guid ClienteId { get; set; }
+    public Guid? ClienteId { get; set; }
 }
 
 public sealed class AgregarCarritoItemRequest
@@ -21,9 +21,21 @@ public sealed class AgregarCarritoItemRequest
     public int Cantidad { get; set; }
 }
 
+public sealed class ActualizarCarritoItemRequest
+{
+    [Required]
+    public Guid CarritoId { get; set; }
+
+    [Required]
+    public Guid ProductoId { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int Cantidad { get; set; }
+}
+
 public sealed record CarritoResponse(
     Guid Id,
-    Guid ClienteId,
+    Guid? ClienteId,
     EstadoCarrito Estado,
     DateTime CreadoUtc,
     DateTime? ActualizadoUtc,

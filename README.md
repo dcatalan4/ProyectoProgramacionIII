@@ -19,7 +19,7 @@ Solución .NET para administración y ventas de supermercado utilizando PostgreS
 
 Antes de ejecutar el proyecto debes tener instalado:
 
-- .NET 9 SDK
+- .NET 10 SDK
 - EF Core CLI
 
 Instalar EF Core CLI globalmente:
@@ -35,12 +35,29 @@ dotnet ef
 ```
 
 
-# Levantar infraestructura Docker
+# Levantar aplicacion con Docker
+
+Crear un archivo `.env` local a partir del ejemplo:
+
+```bash
+cp .env.example .env
+```
+
+Configurar las variables de Mailjet en `.env`:
+
+```text
+MAILJET_API_KEY=tu-api-key-publica
+MAILJET_SECRET_KEY=tu-secret-key
+MAILJET_FROM_EMAIL=correo-remitente-verificado
+MAILJET_FROM_NAME=SuperBodega
+```
+
+Importante: `.env` no se sube al repo. Cada desarrollador debe usar sus credenciales o pedirlas por un canal seguro.
 
 Desde la raíz del proyecto ejecutar:
 
 ```bash
-docker compose up -d
+docker compose up -d --build
 ```
 
 Esto levantará:
@@ -48,6 +65,10 @@ Esto levantará:
 - PostgreSQL
 - Kafka
 - Zookeeper
+- Admin API
+- Ecommerce API
+
+La API Ecommerce usa Mailjet para enviar el detalle del pedido al cliente cuando se procesa el carrito. Si Mailjet no esta configurado, el pedido se procesa igual, pero la notificacion queda marcada como no enviada.
 
 Verificar contenedores:
 
@@ -60,6 +81,16 @@ Deberías ver algo similar:
 - `superbodega-postgres`
 - `superbodega-kafka`
 - `superbodega-zookeeper`
+- `superbodega-admin-api`
+- `superbodega-ecommerce-api`
+
+URLs locales:
+
+- Admin API: `http://localhost:5088/swagger`
+- Ecommerce API: `http://localhost:5180/swagger`
+- PostgreSQL del contenedor: `localhost:55432`
+- Kafka desde el host: `localhost:9092`
+- Kafka desde contenedores: `kafka:29092`
 
 ---
 

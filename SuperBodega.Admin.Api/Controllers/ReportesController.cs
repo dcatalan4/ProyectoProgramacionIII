@@ -18,9 +18,9 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("producto/{productoId:guid}")]
+    [HttpGet("producto/{productoId}")]
     public async Task<ActionResult<ReporteProductoResponse>> PorProducto(
-        Guid productoId,
+        string productoId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
@@ -29,9 +29,9 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("cliente/{clienteId:guid}")]
+    [HttpGet("cliente/{clienteId}")]
     public async Task<ActionResult<ReporteClienteResponse>> PorCliente(
-        Guid clienteId,
+        string clienteId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)
@@ -40,9 +40,9 @@ public sealed class ReportesController(IReporteService reportes) : ControllerBas
         return result.Success ? Ok(result.Value) : BadRequest(result.Error);
     }
 
-    [HttpGet("proveedor/{proveedorId:guid}")]
+    [HttpGet("proveedor/{proveedorId}")]
     public async Task<ActionResult<ReporteProveedorResponse>> PorProveedor(
-        Guid proveedorId,
+        string proveedorId,
         [FromQuery] DateTime desde,
         [FromQuery] DateTime hasta,
         CancellationToken cancellationToken)

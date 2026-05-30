@@ -3,6 +3,7 @@ namespace SuperBodega.Domain.Entities;
 public sealed class Producto
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public string IdOriginal { get; set; } = string.Empty;
     public string Sku { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string? Descripcion { get; set; }
@@ -10,7 +11,7 @@ public sealed class Producto
     public decimal PrecioCompra { get; set; }
     public int Stock { get; set; }
     public bool EstaActivo { get; set; } = true;
-    public Guid CategoriaId { get; set; }
+    public Guid? CategoriaId { get; set; }
     public Categoria? Categoria { get; set; }
     public Guid ProveedorId { get; set; }
     public Proveedor? Proveedor { get; set; }

@@ -3,6 +3,7 @@ namespace SuperBodega.Domain.Entities;
 public sealed class Cliente
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    public string IdOriginal { get; set; } = string.Empty;
     public string Nombre { get; set; } = string.Empty;
     public string Apellido { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;

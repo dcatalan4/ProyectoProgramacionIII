@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SuperBodega.Admin.Api.Dtos.Productos;
 using SuperBodega.Domain.Entities;
 using SuperBodega.Infrastructure.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperBodega.Admin.Api.Services.Productos;
 
@@ -32,28 +34,25 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
 
     public async Task<ServiceResult<ProductoResponse>> CreateAsync(CrearProductoRequest request, CancellationToken cancellationToken)
     {
-        var validation = await ValidateReferencesAsync(request.CategoriaId, request.ProveedorId, cancellationToken);
-        if (validation is not null)
+        var productoId = StringToGuid(request.Id);
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
         {
-            return ServiceResult<ProductoResponse>.Fail(validation);
-        }
-
-        var skuExists = await dbContext.Productos.AnyAsync(producto => producto.Sku == request.Sku, cancellationToken);
-        if (skuExists)
-        {
-            return ServiceResult<ProductoResponse>.Fail("Ya existe un producto con ese SKU.");
+            return ServiceResult<ProductoResponse>.Fail("El proveedor no existe.");
         }
 
         var producto = new Producto
         {
-            Sku = request.Sku.Trim(),
+            Id = productoId,
+            IdOriginal = request.Id.Trim(),
+            Sku = Guid.NewGuid().ToString(),
             Nombre = request.Nombre.Trim(),
             Descripcion = request.Descripcion?.Trim(),
             PrecioVenta = request.PrecioVenta,
             PrecioCompra = request.PrecioCompra,
             Stock = request.Stock,
-            CategoriaId = request.CategoriaId,
-            ProveedorId = request.ProveedorId
+            CategoriaId = null,
+            ProveedorId = proveedorId.Value
         };
 
         dbContext.Productos.Add(producto);
@@ -70,27 +69,20 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
             return ServiceResult<ProductoResponse>.Fail("Producto no encontrado.");
         }
 
-        var validation = await ValidateReferencesAsync(request.CategoriaId, request.ProveedorId, cancellationToken);
-        if (validation is not null)
+        var proveedorId = await ResolveProveedorIdAsync(request.ProveedorId, cancellationToken);
+        if (proveedorId is null)
         {
-            return ServiceResult<ProductoResponse>.Fail(validation);
+            return ServiceResult<ProductoResponse>.Fail("El proveedor no existe.");
         }
 
-        var skuExists = await dbContext.Productos.AnyAsync(item => item.Id != id && item.Sku == request.Sku, cancellationToken);
-        if (skuExists)
-        {
-            return ServiceResult<ProductoResponse>.Fail("Ya existe otro producto con ese SKU.");
-        }
-
-        producto.Sku = request.Sku.Trim();
         producto.Nombre = request.Nombre.Trim();
+        producto.IdOriginal = request.Id.Trim();
         producto.Descripcion = request.Descripcion?.Trim();
         producto.PrecioVenta = request.PrecioVenta;
         producto.PrecioCompra = request.PrecioCompra;
         producto.Stock = request.Stock;
         producto.EstaActivo = request.EstaActivo;
-        producto.CategoriaId = request.CategoriaId;
-        producto.ProveedorId = request.ProveedorId;
+        producto.ProveedorId = proveedorId.Value;
 
         await dbContext.SaveChangesAsync(cancellationToken);
         return ServiceResult<ProductoResponse>.Ok((await GetByIdAsync(producto.Id, cancellationToken))!);
@@ -109,35 +101,118 @@ public sealed class ProductoService(SuperBodegaDbContext dbContext) : IProductoS
         return true;
     }
 
-    private async Task<string?> ValidateReferencesAsync(Guid categoriaId, Guid proveedorId, CancellationToken cancellationToken)
+    public async Task<int> BackfillIdOriginalesAsync(CancellationToken cancellationToken)
     {
-        if (!await dbContext.Categorias.AnyAsync(categoria => categoria.Id == categoriaId, cancellationToken))
+        var productos = await dbContext.Productos
+            .Where(producto => string.IsNullOrWhiteSpace(producto.IdOriginal))
+            .ToListAsync(cancellationToken);
+
+        var actualizados = 0;
+
+        foreach (var producto in productos)
         {
-            return "La categoria no existe.";
+            var recuperado = TryRecoverIdOriginal(producto.Id, producto.Nombre, producto.Sku);
+            if (string.IsNullOrWhiteSpace(recuperado))
+            {
+                continue;
+            }
+
+            producto.IdOriginal = recuperado;
+            actualizados++;
         }
 
-        if (!await dbContext.Proveedores.AnyAsync(proveedor => proveedor.Id == proveedorId, cancellationToken))
+        if (actualizados > 0)
         {
-            return "El proveedor no existe.";
+            await dbContext.SaveChangesAsync(cancellationToken);
         }
 
-        return null;
+        return actualizados;
+    }
+
+    private async Task<Guid?> ResolveProveedorIdAsync(string proveedorId, CancellationToken cancellationToken)
+    {
+        var id = proveedorId.Trim();
+        var parsed = Guid.TryParse(id, out var guid) ? guid : StringToGuid(id);
+
+        var proveedor = await dbContext.Proveedores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Id == parsed || item.IdOriginal == id, cancellationToken);
+
+        if (proveedor is null && !Guid.TryParse(id, out _))
+        {
+            proveedor = await dbContext.Proveedores
+                .AsNoTracking()
+                .FirstOrDefaultAsync(item => item.Id == StringToGuid(id), cancellationToken);
+        }
+
+        return proveedor?.Id;
     }
 
     private static ProductoResponse ToResponse(Producto producto)
     {
         return new ProductoResponse(
             producto.Id,
-            producto.Sku,
+            producto.IdOriginal,
             producto.Nombre,
             producto.Descripcion,
             producto.PrecioVenta,
             producto.PrecioCompra,
             producto.Stock,
             producto.EstaActivo,
-            producto.CategoriaId,
-            producto.Categoria?.Nombre,
-            producto.ProveedorId,
+            !string.IsNullOrWhiteSpace(producto.Proveedor?.IdOriginal)
+                ? producto.Proveedor!.IdOriginal
+                : producto.ProveedorId.ToString(),
             producto.Proveedor?.Nombre);
+    }
+
+    private static Guid StringToGuid(string input)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
+    }
+
+    private static string? TryRecoverIdOriginal(Guid id, string nombre, string sku)
+    {
+        var candidatos = new HashSet<string>(StringComparer.Ordinal);
+
+        if (!string.IsNullOrWhiteSpace(nombre))
+        {
+            var nombreLimpio = nombre.Trim();
+            candidatos.Add(nombreLimpio);
+            candidatos.Add(nombreLimpio.ToLowerInvariant());
+            candidatos.Add(nombreLimpio.ToUpperInvariant());
+            candidatos.Add(nombreLimpio.Replace(" ", "", StringComparison.Ordinal));
+        }
+
+        if (!string.IsNullOrWhiteSpace(sku) &&
+            sku.Length >= 4 &&
+            !Guid.TryParse(sku, out _))
+        {
+            candidatos.Add(sku.Trim());
+        }
+
+        foreach (var candidato in candidatos)
+        {
+            if (candidato.Length < 4)
+            {
+                continue;
+            }
+
+            if (StringToGuid(candidato) == id)
+            {
+                return candidato;
+            }
+        }
+
+        for (var numero = 1000; numero <= 999_999; numero++)
+        {
+            if (StringToGuid(numero.ToString()) == id)
+            {
+                return numero.ToString();
+            }
+        }
+
+        return null;
     }
 }

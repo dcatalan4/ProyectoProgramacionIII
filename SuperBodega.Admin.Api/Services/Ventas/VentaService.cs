@@ -2,6 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using SuperBodega.Admin.Api.Dtos.Ventas;
 using SuperBodega.Domain.Entities;
 using SuperBodega.Infrastructure.Data;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace SuperBodega.Admin.Api.Services.Ventas;
 
@@ -21,7 +23,15 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
 
     public async Task<ServiceResult<VentaResponse>> CreateAsync(CrearVentaRequest request, CancellationToken cancellationToken)
     {
-        var validation = await ValidateAsync(Guid.Empty, request, null, cancellationToken);
+        if (string.IsNullOrWhiteSpace(request.Id) || request.Id.Length < 4)
+        {
+            return ServiceResult<VentaResponse>.Fail("El ID es obligatorio y debe tener al menos 4 caracteres.");
+        }
+
+        var id = StringToGuid(request.Id);
+        var clienteId = StringToGuid(request.ClienteId);
+
+        var validation = await ValidateAsync(Guid.Empty, request, clienteId, null, cancellationToken);
         if (validation is not null)
         {
             return ServiceResult<VentaResponse>.Fail(validation);
@@ -30,13 +40,19 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
         await using var transaction = await dbContext.Database.BeginTransactionAsync(cancellationToken);
         var venta = new Venta
         {
+            Id = id,
+            IdOriginal = request.Id,
             NumeroVenta = request.NumeroVenta.Trim(),
-            ClienteId = request.ClienteId
+            ClienteId = clienteId,
+            FechaUtc = request.Fecha.Kind == DateTimeKind.Unspecified
+                ? DateTime.SpecifyKind(request.Fecha, DateTimeKind.Utc)
+                : request.Fecha.ToUniversalTime()
         };
 
         foreach (var requestedDetail in request.Detalles)
         {
-            var producto = await dbContext.Productos.FindAsync([requestedDetail.ProductoId], cancellationToken);
+            var productoId = StringToGuid(requestedDetail.ProductoId);
+            var producto = await dbContext.Productos.FindAsync([productoId], cancellationToken);
             venta.Detalles.Add(new DetalleVenta
             {
                 ProductoId = producto!.Id,
@@ -63,7 +79,9 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
             return ServiceResult<VentaResponse>.Fail("Venta no encontrada.");
         }
 
-        var validation = await ValidateAsync(id, request, venta.Detalles, cancellationToken);
+        var clienteId = StringToGuid(request.ClienteId);
+
+        var validation = await ValidateAsync(id, request, clienteId, venta.Detalles, cancellationToken);
         if (validation is not null)
         {
             return ServiceResult<VentaResponse>.Fail(validation);
@@ -74,19 +92,20 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
 
         dbContext.DetallesVenta.RemoveRange(venta.Detalles);
         venta.NumeroVenta = request.NumeroVenta.Trim();
-        venta.ClienteId = request.ClienteId;
+        venta.ClienteId = clienteId;
         venta.Estado = request.Estado;
         venta.Detalles = [];
 
         foreach (var requestedDetail in request.Detalles)
         {
-            var producto = await dbContext.Productos.FindAsync([requestedDetail.ProductoId], cancellationToken);
+            var productoId = StringToGuid(requestedDetail.ProductoId);
+            var producto = await dbContext.Productos.FindAsync([productoId], cancellationToken);
             venta.Detalles.Add(new DetalleVenta
             {
                 VentaId = venta.Id,
-                ProductoId = requestedDetail.ProductoId,
+                ProductoId = producto!.Id,
                 Cantidad = requestedDetail.Cantidad,
-                PrecioUnitario = producto!.PrecioVenta
+                PrecioUnitario = producto.PrecioVenta
             });
         }
 
@@ -145,6 +164,7 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
     private async Task<string?> ValidateAsync(
         Guid id,
         CrearVentaRequest request,
+        Guid clienteId,
         IEnumerable<DetalleVenta>? detallesActuales,
         CancellationToken cancellationToken)
     {
@@ -153,7 +173,7 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
             return "La venta debe incluir al menos un detalle.";
         }
 
-        if (!await dbContext.Clientes.AnyAsync(cliente => cliente.Id == request.ClienteId, cancellationToken))
+        if (!await dbContext.Clientes.AnyAsync(cliente => cliente.Id == clienteId, cancellationToken))
         {
             return "El cliente no existe.";
         }
@@ -170,12 +190,13 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
 
         foreach (var detalle in request.Detalles.GroupBy(detalle => detalle.ProductoId))
         {
-            var productoId = detalle.Key;
+            var productoIdString = detalle.Key;
+            var productoId = StringToGuid(productoIdString);
             var cantidadSolicitada = detalle.Sum(item => item.Cantidad);
             var producto = await dbContext.Productos.FindAsync([productoId], cancellationToken);
             if (producto is null || !producto.EstaActivo)
             {
-                return $"El producto {productoId} no existe o no esta activo.";
+                return $"El producto {productoIdString} no existe o no esta activo.";
             }
 
             cantidadesActuales.TryGetValue(productoId, out var cantidadActual);
@@ -212,20 +233,43 @@ public sealed class VentaService(SuperBodegaDbContext dbContext) : IVentaService
 
     private static VentaResponse ToResponse(Venta venta)
     {
+        var idOriginal = string.IsNullOrEmpty(venta.IdOriginal)
+            ? venta.Id.ToString().Substring(0, Math.Min(8, venta.Id.ToString().Length))
+            : venta.IdOriginal;
+
+        var clienteId = !string.IsNullOrWhiteSpace(venta.Cliente?.IdOriginal)
+            ? venta.Cliente!.IdOriginal
+            : venta.ClienteId?.ToString() ?? string.Empty;
+
         return new VentaResponse(
             venta.Id,
+            idOriginal,
             venta.NumeroVenta,
             venta.FechaUtc,
             venta.Estado,
-            venta.ClienteId,
+            clienteId,
             venta.Cliente is null ? null : $"{venta.Cliente.Nombre} {venta.Cliente.Apellido}",
             venta.Total,
-            venta.Detalles.Select(detalle => new DetalleVentaResponse(
-                detalle.Id,
-                detalle.ProductoId,
-                detalle.Producto?.Nombre,
-                detalle.Cantidad,
-                detalle.PrecioUnitario,
-                detalle.Subtotal)).ToArray());
+            venta.Detalles.Select(detalle =>
+            {
+                var productoId = !string.IsNullOrWhiteSpace(detalle.Producto?.IdOriginal)
+                    ? detalle.Producto!.IdOriginal
+                    : detalle.ProductoId.ToString();
+
+                return new DetalleVentaResponse(
+                    detalle.Id,
+                    productoId,
+                    detalle.Producto?.Nombre,
+                    detalle.Cantidad,
+                    detalle.PrecioUnitario,
+                    detalle.Subtotal);
+            }).ToArray());
+    }
+
+    private static Guid StringToGuid(string input)
+    {
+        using var md5 = MD5.Create();
+        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
 }

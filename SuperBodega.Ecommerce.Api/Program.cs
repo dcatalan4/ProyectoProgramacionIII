@@ -2,6 +2,7 @@
 using SuperBodega.Ecommerce.Api.Consumers;
 using SuperBodega.Ecommerce.Api.Messaging;
 using SuperBodega.Ecommerce.Api.Queues;
+using SuperBodega.Ecommerce.Api.Services.Email;
 using SuperBodega.Ecommerce.Api.Services.Carrito;
 using SuperBodega.Ecommerce.Api.Services.Catalogo;
 using SuperBodega.Ecommerce.Api.Services.Pedidos;
@@ -12,13 +13,18 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSuperBodegaInfrastructure(builder.Configuration);
 builder.Services.AddScoped<ICatalogoService, CatalogoService>();
 builder.Services.AddScoped<ICarritoService, CarritoService>();
 builder.Services.AddScoped<IPedidoService, PedidoService>();
+builder.Services.AddHttpClient<IEmailService, MailjetEmailService>();
 builder.Services.AddSingleton<KafkaProducer>();
 builder.Services.AddHostedService<KafkaConsumerService>();
 
@@ -30,7 +36,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.UseCors(policy => policy
+    .AllowAnyOrigin()
+    .AllowAnyMethod()
+    .AllowAnyHeader());
 
 app.UseAuthorization();
 

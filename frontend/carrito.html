@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperBodega - Carrito</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>SuperBodega</h1>
+            <nav>
+                <a href="index.html">Catálogo</a>
+                <a href="carrito.html" class="active">Carrito</a>
+                <a href="admin.html">Administración</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <h2>Carrito de Compras</h2>
+        <section id="cliente-carrito" class="cliente-carrito"></section>
+        <div id="carrito-items" class="carrito-items"></div>
+        <div class="carrito-total">
+            <h3>Total: Q<span id="total">0.00</span></h3>
+            <div class="modo-pedido">
+                <label>
+                    <input type="radio" name="modo-pedido" value="sincrono" checked>
+                    Procesar Síncrono (inmediato)
+                </label>
+                <label>
+                    <input type="radio" name="modo-pedido" value="asincrono">
+                    Procesar Asíncrono (en cola)
+                </label>
+            </div>
+            <button id="btn-procesar-pedido" class="btn btn-primary">Procesar Pedido</button>
+        </div>
+        <div id="estado-solicitud" class="estado-solicitud" style="display: none;">
+            <h3>Estado del Pedido Asíncrono</h3>
+            <p>Solicitud ID: <span id="solicitud-id"></span></p>
+            <p>Estado: <span id="solicitud-estado"></span></p>
+            <p id="solicitud-venta" style="display: none;">Venta ID: <span id="venta-id"></span></p>
+            <p id="solicitud-error" style="display: none; color: #e53e3e;">Error: <span id="error-mensaje"></span></p>
+            <button id="btn-finalizar-solicitud" class="btn btn-primary" style="display: none;">Finalizar Compra Manualmente</button>
+        </div>
+    </main>
+
+    <script src="api.js?v=4"></script>
+    <script src="carrito.js?v=4"></script>
+</body>
+</html>

@@ -13,7 +13,7 @@ public sealed record PedidoResponse(
     Guid VentaId,
     string NumeroVenta,
     EstadoVenta Estado,
-    Guid ClienteId,
+    Guid? ClienteId,
     decimal Total,
     PedidoNotificacionResponse Notificacion,
     IReadOnlyCollection<PedidoDetalleResponse> Detalles);

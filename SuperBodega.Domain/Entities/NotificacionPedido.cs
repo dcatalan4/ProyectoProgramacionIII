@@ -5,7 +5,7 @@ public sealed class NotificacionPedido
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid VentaId { get; set; }
     public Venta? Venta { get; set; }
-    public Guid ClienteId { get; set; }
+    public Guid? ClienteId { get; set; }
     public Cliente? Cliente { get; set; }
     public TipoNotificacionPedido Tipo { get; set; } = TipoNotificacionPedido.Email;
     public string Destinatario { get; set; } = string.Empty;

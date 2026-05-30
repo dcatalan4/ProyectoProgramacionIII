@@ -14,16 +14,18 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReportePeriodoResponse>.Fail(validation);
         }
 
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
+
         var ventas = await dbContext.Ventas
             .AsNoTracking()
             .Include(venta => venta.Detalles)
-            .Where(venta => venta.FechaUtc >= desde && venta.FechaUtc <= hasta)
+            .Where(venta => venta.FechaUtc >= desdeUtc && venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var compras = await dbContext.Compras
             .AsNoTracking()
             .Include(compra => compra.Detalles)
-            .Where(compra => compra.FechaUtc >= desde && compra.FechaUtc <= hasta)
+            .Where(compra => compra.FechaUtc >= desdeUtc && compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReportePeriodoResponse>.Ok(new ReportePeriodoResponse(
@@ -35,7 +37,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             compras.Sum(compra => compra.Total)));
     }
 
-    public async Task<ServiceResult<ReporteProductoResponse>> PorProductoAsync(Guid productoId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
+    public async Task<ServiceResult<ReporteProductoResponse>> PorProductoAsync(string productoId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
     {
         var validation = ValidatePeriod(desde, hasta);
         if (validation is not null)
@@ -43,28 +45,31 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProductoResponse>.Fail(validation);
         }
 
-        var producto = await dbContext.Productos.AsNoTracking().FirstOrDefaultAsync(item => item.Id == productoId, cancellationToken);
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
+
+        var producto = await FindProductoAsync(productoId, cancellationToken);
         if (producto is null)
         {
             return ServiceResult<ReporteProductoResponse>.Fail("Producto no encontrado.");
         }
+        var productoGuid = producto.Id;
 
         var ventas = await dbContext.DetallesVenta
             .AsNoTracking()
             .Include(detalle => detalle.Venta)
-            .Where(detalle => detalle.ProductoId == productoId &&
+            .Where(detalle => detalle.ProductoId == productoGuid &&
                               detalle.Venta != null &&
-                              detalle.Venta.FechaUtc >= desde &&
-                              detalle.Venta.FechaUtc <= hasta)
+                              detalle.Venta.FechaUtc >= desdeUtc &&
+                              detalle.Venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var compras = await dbContext.DetallesCompra
             .AsNoTracking()
             .Include(detalle => detalle.Compra)
-            .Where(detalle => detalle.ProductoId == productoId &&
+            .Where(detalle => detalle.ProductoId == productoGuid &&
                               detalle.Compra != null &&
-                              detalle.Compra.FechaUtc >= desde &&
-                              detalle.Compra.FechaUtc <= hasta)
+                              detalle.Compra.FechaUtc >= desdeUtc &&
+                              detalle.Compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReporteProductoResponse>.Ok(new ReporteProductoResponse(
@@ -76,7 +81,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             compras.Sum(detalle => detalle.Subtotal)));
     }
 
-    public async Task<ServiceResult<ReporteClienteResponse>> PorClienteAsync(Guid clienteId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
+    public async Task<ServiceResult<ReporteClienteResponse>> PorClienteAsync(string clienteId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
     {
         var validation = ValidatePeriod(desde, hasta);
         if (validation is not null)
@@ -84,16 +89,19 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteClienteResponse>.Fail(validation);
         }
 
-        var cliente = await dbContext.Clientes.AsNoTracking().FirstOrDefaultAsync(item => item.Id == clienteId, cancellationToken);
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
+
+        var cliente = await FindClienteAsync(clienteId, cancellationToken);
         if (cliente is null)
         {
             return ServiceResult<ReporteClienteResponse>.Fail("Cliente no encontrado.");
         }
+        var clienteGuid = cliente.Id;
 
         var ventas = await dbContext.Ventas
             .AsNoTracking()
             .Include(venta => venta.Detalles)
-            .Where(venta => venta.ClienteId == clienteId && venta.FechaUtc >= desde && venta.FechaUtc <= hasta)
+            .Where(venta => venta.ClienteId == clienteGuid && venta.FechaUtc >= desdeUtc && venta.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         return ServiceResult<ReporteClienteResponse>.Ok(new ReporteClienteResponse(
@@ -103,7 +111,7 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             ventas.Sum(venta => venta.Total)));
     }
 
-    public async Task<ServiceResult<ReporteProveedorResponse>> PorProveedorAsync(Guid proveedorId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
+    public async Task<ServiceResult<ReporteProveedorResponse>> PorProveedorAsync(string proveedorId, DateTime desde, DateTime hasta, CancellationToken cancellationToken)
     {
         var validation = ValidatePeriod(desde, hasta);
         if (validation is not null)
@@ -111,20 +119,23 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
             return ServiceResult<ReporteProveedorResponse>.Fail(validation);
         }
 
-        var proveedor = await dbContext.Proveedores.AsNoTracking().FirstOrDefaultAsync(item => item.Id == proveedorId, cancellationToken);
+        var (desdeUtc, hastaUtc) = ToUtcInclusiveRange(desde, hasta);
+
+        var proveedor = await FindProveedorAsync(proveedorId, cancellationToken);
         if (proveedor is null)
         {
             return ServiceResult<ReporteProveedorResponse>.Fail("Proveedor no encontrado.");
         }
+        var proveedorGuid = proveedor.Id;
 
         var compras = await dbContext.Compras
             .AsNoTracking()
             .Include(compra => compra.Detalles)
-            .Where(compra => compra.ProveedorId == proveedorId && compra.FechaUtc >= desde && compra.FechaUtc <= hasta)
+            .Where(compra => compra.ProveedorId == proveedorGuid && compra.FechaUtc >= desdeUtc && compra.FechaUtc <= hastaUtc)
             .ToArrayAsync(cancellationToken);
 
         var productosActivos = await dbContext.Productos
-            .CountAsync(producto => producto.ProveedorId == proveedorId && producto.EstaActivo, cancellationToken);
+            .CountAsync(producto => producto.ProveedorId == proveedorGuid && producto.EstaActivo, cancellationToken);
 
         return ServiceResult<ReporteProveedorResponse>.Ok(new ReporteProveedorResponse(
             proveedor.Id,
@@ -142,5 +153,57 @@ public sealed class ReporteService(SuperBodegaDbContext dbContext) : IReporteSer
         }
 
         return null;
+    }
+
+    private static (DateTime DesdeUtc, DateTime HastaUtc) ToUtcInclusiveRange(DateTime desde, DateTime hasta)
+    {
+        var hastaFinal = hasta.TimeOfDay == TimeSpan.Zero
+            ? hasta.Date.AddDays(1).AddTicks(-1)
+            : hasta;
+
+        return (ToUtc(desde), ToUtc(hastaFinal));
+    }
+
+    private static DateTime ToUtc(DateTime fecha)
+    {
+        return fecha.Kind == DateTimeKind.Unspecified
+            ? DateTime.SpecifyKind(fecha, DateTimeKind.Utc)
+            : fecha.ToUniversalTime();
+    }
+
+    private async Task<SuperBodega.Domain.Entities.Producto?> FindProductoAsync(string id, CancellationToken cancellationToken)
+    {
+        var parsed = Guid.TryParse(id, out var guid) ? guid : (Guid?)null;
+        return await dbContext.Productos
+            .AsNoTracking()
+            .FirstOrDefaultAsync(producto =>
+                (parsed.HasValue && producto.Id == parsed.Value) ||
+                producto.IdOriginal == id ||
+                producto.Id.ToString().StartsWith(id),
+                cancellationToken);
+    }
+
+    private async Task<SuperBodega.Domain.Entities.Cliente?> FindClienteAsync(string id, CancellationToken cancellationToken)
+    {
+        var parsed = Guid.TryParse(id, out var guid) ? guid : (Guid?)null;
+        return await dbContext.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(cliente =>
+                (parsed.HasValue && cliente.Id == parsed.Value) ||
+                cliente.IdOriginal == id ||
+                cliente.Id.ToString().StartsWith(id),
+                cancellationToken);
+    }
+
+    private async Task<SuperBodega.Domain.Entities.Proveedor?> FindProveedorAsync(string id, CancellationToken cancellationToken)
+    {
+        var parsed = Guid.TryParse(id, out var guid) ? guid : (Guid?)null;
+        return await dbContext.Proveedores
+            .AsNoTracking()
+            .FirstOrDefaultAsync(proveedor =>
+                (parsed.HasValue && proveedor.Id == parsed.Value) ||
+                proveedor.IdOriginal == id ||
+                proveedor.Id.ToString().StartsWith(id),
+                cancellationToken);
     }
 }

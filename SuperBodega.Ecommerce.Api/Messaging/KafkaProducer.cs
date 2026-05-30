@@ -8,11 +8,13 @@ public class KafkaProducer : IPedidoQueue
 {
     private readonly IProducer<Null, string> _producer;
 
-    public KafkaProducer()
+    public KafkaProducer(IConfiguration configuration)
     {
+        var bootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
+
         var config = new ProducerConfig
         {
-            BootstrapServers = "localhost:9092"
+            BootstrapServers = bootstrapServers
         };
 
         _producer = new ProducerBuilder<Null, string>(config)

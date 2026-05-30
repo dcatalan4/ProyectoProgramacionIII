@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SuperBodega - Catálogo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>SuperBodega</h1>
+            <nav>
+                <a href="index.html" class="active">Catálogo</a>
+                <a href="carrito.html">Carrito</a>
+                <a href="admin.html">Administración</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="catalogo-header">
+            <h2>Catálogo de Productos</h2>
+            <div class="filtros">
+                <select id="cliente-compra">
+                    <option value="">Selecciona un cliente</option>
+                </select>
+                <select id="filtro-categoria">
+                    <option value="">Todas las categorías</option>
+                </select>
+                <input type="text" id="busqueda" placeholder="Buscar productos...">
+            </div>
+        </div>
+        <section class="cliente-rapido">
+            <h3>Cliente de compra</h3>
+            <div class="cliente-rapido-grid">
+                <input type="text" id="cliente-nombre" placeholder="Nombre">
+                <input type="text" id="cliente-apellido" placeholder="Apellido">
+                <input type="email" id="cliente-email" placeholder="Email">
+                <input type="text" id="cliente-telefono" placeholder="Telefono">
+                <input type="text" id="cliente-direccion" placeholder="Direccion de envio">
+                <button id="btn-crear-cliente-compra" class="btn btn-secondary">Crear cliente</button>
+            </div>
+        </section>
+        <div id="catalogo-grid" class="catalogo-grid"></div>
+    </main>
+
+    <script src="api.js"></script>
+    <script src="catalogo.js"></script>
+</body>
+</html>

@@ -21,6 +21,7 @@ public sealed class NotificacionPedidoConfiguration : IEntityTypeConfiguration<N
         builder.HasOne(notificacion => notificacion.Cliente)
             .WithMany(cliente => cliente.NotificacionesPedido)
             .HasForeignKey(notificacion => notificacion.ClienteId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

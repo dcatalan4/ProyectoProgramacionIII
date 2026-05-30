@@ -2,6 +2,9 @@
 using System.Text.Json;
 using SuperBodega.Ecommerce.Api.Messaging;
 using SuperBodega.Ecommerce.Api.Services.Pedidos;
+using SuperBodega.Infrastructure.Data;
+using SuperBodega.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
 
 namespace SuperBodega.Ecommerce.Api.Consumers;
 
@@ -10,13 +13,14 @@ public class KafkaConsumerService : BackgroundService
     private readonly IServiceProvider _serviceProvider;
     private readonly IConsumer<Ignore, string> _consumer;
 
-    public KafkaConsumerService(IServiceProvider serviceProvider)
+    public KafkaConsumerService(IServiceProvider serviceProvider, IConfiguration configuration)
     {
         _serviceProvider = serviceProvider;
+        var bootstrapServers = configuration["Kafka:BootstrapServers"] ?? "localhost:9092";
 
         var config = new ConsumerConfig
         {
-            BootstrapServers = "localhost:9092",
+            BootstrapServers = bootstrapServers,
             GroupId = "pedidos-group",
             AutoOffsetReset = AutoOffsetReset.Earliest
         };
@@ -59,6 +63,16 @@ public class KafkaConsumerService : BackgroundService
                 }
 
                 using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<SuperBodegaDbContext>();
+
+                var solicitud = await dbContext.SolicitudPedidos
+                    .FirstOrDefaultAsync(s => s.CarritoId == pedido.CarritoId, stoppingToken);
+
+                if (solicitud is not null)
+                {
+                    solicitud.Estado = EstadoSolicitud.Procesando;
+                    await dbContext.SaveChangesAsync(stoppingToken);
+                }
 
                 var pedidoService = scope.ServiceProvider
                     .GetRequiredService<IPedidoService>();
@@ -67,13 +81,23 @@ public class KafkaConsumerService : BackgroundService
                     pedido.CarritoId,
                     stoppingToken);
 
-                if (response.Success)
+                if (solicitud is not null)
                 {
-                    Console.WriteLine("Pedido procesado correctamente.");
-                }
-                else
-                {
-                    Console.WriteLine($"Error procesando pedido: {response.Error}");
+                    if (response.Success)
+                    {
+                        solicitud.Estado = EstadoSolicitud.Completado;
+                        solicitud.ProcesadoUtc = DateTime.UtcNow;
+                        solicitud.VentaId = response.Value.VentaId;
+                        Console.WriteLine("Pedido procesado correctamente.");
+                    }
+                    else
+                    {
+                        solicitud.Estado = EstadoSolicitud.Fallido;
+                        solicitud.ProcesadoUtc = DateTime.UtcNow;
+                        solicitud.MensajeError = response.Error;
+                        Console.WriteLine($"Error procesando pedido: {response.Error}");
+                    }
+                    await dbContext.SaveChangesAsync(stoppingToken);
                 }
             }
         }

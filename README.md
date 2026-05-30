@@ -1,3 +1,7 @@
+# Links de despliegue AWS
+- http://3.84.97.58:5180/index.html
+- http://3.84.97.58:5088/swagger/index.html
+- http://3.84.97.58:5180/swagger/index.html
 # SuperBodega
 
 Solución .NET para administración y ventas de supermercado utilizando PostgreSQL, Docker y Kafka.
